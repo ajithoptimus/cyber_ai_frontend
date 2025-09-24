@@ -1,6 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertCircle, TrendingUp, Shield, Activity } from 'lucide-react';
-import type { AnalysisData } from '../App';
+import FileUpload from './FileUpload'; // Import your existing FileUpload component
+
+// NEW: API interface for backend data
+interface BackendDashboardData {
+  unified_risk_score: number;
+  risk_level: string;
+  total_findings: number;
+  critical_issues: number;
+  executive_summary: {
+    title: string;
+    message: string;
+    alert_level: string;
+  };
+  immediate_actions: string[];
+  next_steps: string[];
+  reputation_cards: {
+    domain_reputation: { status: string; message: string; };
+    ip_address_reputation: { status: string; message: string; };
+    whois_lookup: { status: string; message: string; };
+    dns_records: { status: string; message: string; };
+  };
+  system_status: string;
+}
+
+// Keep your existing AnalysisData interface for backward compatibility
+interface AnalysisData {
+  riskScore: number;
+  riskLevel: string;
+  totalFindings: number;
+  criticalIssues: number;
+  threats: Array<{
+    type: string;
+    status: string;
+    description: string;
+  }>;
+}
 
 interface DashboardProps {
   data: AnalysisData;
@@ -8,6 +43,72 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
+  // NEW: State for backend data
+  const [backendData, setBackendData] = useState<BackendDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // NEW: Fetch real data from backend
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:8000/api/v1/dashboard/frontend/summary');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const backendResult = await response.json();
+        setBackendData(backendResult);
+        setError(null);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only fetch if we're on the threat intelligence feature
+    if (activeFeature === 'threat-intelligence') {
+      fetchDashboardData();
+      // Refresh every 5 minutes
+      const interval = setInterval(fetchDashboardData, 300000);
+      return () => clearInterval(interval);
+    }
+  }, [activeFeature]);
+
+  // Use backend data if available, fallback to props data
+  const displayData = backendData ? {
+    riskScore: backendData.unified_risk_score,
+    riskLevel: backendData.risk_level,
+    totalFindings: backendData.total_findings,
+    criticalIssues: backendData.critical_issues,
+    threats: [
+      {
+        type: 'Domain Reputation',
+        status: backendData.reputation_cards.domain_reputation.status,
+        description: backendData.reputation_cards.domain_reputation.message
+      },
+      {
+        type: 'IP Address Reputation', 
+        status: backendData.reputation_cards.ip_address_reputation.status,
+        description: backendData.reputation_cards.ip_address_reputation.message
+      },
+      {
+        type: 'WHOIS Lookup',
+        status: backendData.reputation_cards.whois_lookup.status,
+        description: backendData.reputation_cards.whois_lookup.message
+      },
+      {
+        type: 'DNS Records',
+        status: backendData.reputation_cards.dns_records.status,
+        description: backendData.reputation_cards.dns_records.message
+      }
+    ]
+  } : data;
+
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'LOW': return 'text-green-400';
@@ -20,7 +121,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
 
   const RiskGauge = () => {
     const circumference = 2 * Math.PI * 60;
-    const strokeDashoffset = circumference - (data.riskScore / 10) * circumference;
+    const strokeDashoffset = circumference - (displayData.riskScore / 10) * circumference;
     
     return (
       <div className="relative flex items-center justify-center">
@@ -43,28 +144,137 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            className={`${getRiskColor(data.riskLevel)} transition-all duration-2000`}
+            className={`${getRiskColor(displayData.riskLevel)} transition-all duration-2000`}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-4xl font-bold ${getRiskColor(data.riskLevel)}`}>
-            {data.riskScore.toFixed(1)}
+          <span className={`text-4xl font-bold ${getRiskColor(displayData.riskLevel)}`}>
+            {displayData.riskScore.toFixed(1)}
           </span>
           <span className="text-sm text-gray-400 uppercase tracking-wider">
-            {data.riskLevel}
+            {displayData.riskLevel}
           </span>
         </div>
       </div>
     );
   };
 
+  // NEW: Handle File Analysis feature
+  if (activeFeature === 'file-analysis') {
+    return (
+      <div className="space-y-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">File Analysis</h1>
+          <p className="text-gray-400">Upload files for comprehensive security analysis</p>
+        </div>
+        <FileUpload />
+      </div>
+    );
+  }
+
+  // NEW: Handle other features
+  if (activeFeature === 'whois-lookup') {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg">
+        <h1 className="text-3xl font-bold text-white mb-4">WHOIS Lookup</h1>
+        <p className="text-gray-400">Domain information and ownership analysis will appear here.</p>
+        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeFeature === 'dns-records') {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg">
+        <h1 className="text-3xl font-bold text-white mb-4">DNS Records</h1>
+        <p className="text-gray-400">DNS configuration analysis and monitoring will appear here.</p>
+        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeFeature === 'ip-lookup') {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg">
+        <h1 className="text-3xl font-bold text-white mb-4">IP Lookup</h1>
+        <p className="text-gray-400">IP address analysis and geolocation services will appear here.</p>
+        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeFeature === 'threat-check') {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg">
+        <h1 className="text-3xl font-bold text-white mb-4">Threat Check</h1>
+        <p className="text-gray-400">Advanced threat analysis and IOC checking will appear here.</p>
+        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeFeature === 'breach-check') {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg">
+        <h1 className="text-3xl font-bold text-white mb-4">Breach Check</h1>
+        <p className="text-gray-400">Data breach monitoring and credential exposure checking will appear here.</p>
+        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeFeature === 'ai-reports') {
+    return (
+      <div className="bg-gray-800 p-6 rounded-lg">
+        <h1 className="text-3xl font-bold text-white mb-4">AI Reports</h1>
+        <p className="text-gray-400">AI-generated security reports and insights will appear here.</p>
+        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
+        </div>
+      </div>
+    );
+  }
+
+  // DEFAULT: Threat Intelligence Dashboard
   if (activeFeature === 'threat-intelligence') {
     return (
       <div className="space-y-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Threat Intelligence Dashboard</h1>
-          <p className="text-gray-400">Real-time security analysis and threat assessment overview</p>
+          <p className="text-gray-400">
+            Real-time security analysis and threat assessment overview
+            {backendData ? ' (Live Data)' : ' (Demo Data)'}
+          </p>
         </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+              <span className="ml-3 text-gray-400">Loading live security data...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-800/20 border border-red-500/20 rounded-lg p-4 mb-6">
+            <p className="text-red-400">
+              ⚠️ Unable to connect to backend: {error}. Showing demo data.
+            </p>
+          </div>
+        )}
 
         {/* Risk Overview */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -75,12 +285,12 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             </div>
             <div className="text-center">
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                data.riskLevel === 'HIGH' 
+                displayData.riskLevel === 'HIGH' 
                   ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
                   : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
               }`}>
                 <div className="w-2 h-2 bg-current rounded-full mr-2 animate-pulse"></div>
-                {data.riskLevel} RISK DETECTED
+                {displayData.riskLevel} RISK DETECTED
               </span>
             </div>
           </div>
@@ -88,15 +298,21 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
           <div className="lg:col-span-2 bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <AlertCircle className="w-5 h-5 mr-2 text-orange-400" />
-              Executive Summary
+              Executive Summary {backendData && <span className="text-xs text-green-400 ml-2">(LIVE)</span>}
             </h3>
             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-lg p-4 mb-4">
               <p className="text-gray-200 leading-relaxed">
-                <strong className="text-orange-400">⚠️ IMMEDIATE ATTENTION REQUIRED:</strong> Current security analysis reveals a{' '}
-                <strong className="text-orange-300">{data.riskScore}/10 {data.riskLevel} risk level</strong> requiring 
-                executive attention. Analysis identified{' '}
-                <strong className="text-blue-400">{data.totalFindings} total findings</strong> with{' '}
-                <strong className="text-red-400">{data.criticalIssues} critical security issues</strong> requiring urgent remediation.
+                {backendData ? (
+                  backendData.executive_summary.message
+                ) : (
+                  <>
+                    <strong className="text-orange-400">⚠️ IMMEDIATE ATTENTION REQUIRED:</strong> Current security analysis reveals a{' '}
+                    <strong className="text-orange-300">{displayData.riskScore}/10 {displayData.riskLevel} risk level</strong> requiring 
+                    executive attention. Analysis identified{' '}
+                    <strong className="text-blue-400">{displayData.totalFindings} total findings</strong> with{' '}
+                    <strong className="text-red-400">{displayData.criticalIssues} critical security issues</strong> requiring urgent remediation.
+                  </>
+                )}
               </p>
             </div>
 
@@ -106,9 +322,17 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
                   <span className="mr-2">🎯</span> Immediate Actions
                 </h4>
                 <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• Address {data.criticalIssues} critical vulnerabilities</li>
-                  <li>• Emergency security review</li>
-                  <li>• Enhance monitoring protocols</li>
+                  {backendData ? (
+                    backendData.immediate_actions.map((action, index) => (
+                      <li key={index}>• {action}</li>
+                    ))
+                  ) : (
+                    <>
+                      <li>• Address {displayData.criticalIssues} critical vulnerabilities</li>
+                      <li>• Emergency security review</li>
+                      <li>• Enhance monitoring protocols</li>
+                    </>
+                  )}
                 </ul>
               </div>
               
@@ -117,9 +341,17 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
                   <span className="mr-2">📅</span> Next Steps
                 </h4>
                 <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• Security review: {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</li>
-                  <li>• Compliance assessment</li>
-                  <li>• Risk reassessment in 7 days</li>
+                  {backendData ? (
+                    backendData.next_steps.map((step, index) => (
+                      <li key={index}>• {step}</li>
+                    ))
+                  ) : (
+                    <>
+                      <li>• Security review: {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</li>
+                      <li>• Compliance assessment</li>
+                      <li>• Risk reassessment in 7 days</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
@@ -128,7 +360,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
 
         {/* Threat Categories */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {data.threats.map((threat, index) => (
+          {displayData.threats.map((threat, index) => (
             <div key={index} className="bg-gray-800 rounded-lg p-5 border border-gray-700">
               <h3 className="font-semibold text-white mb-2">{threat.type}</h3>
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mb-3 ${
@@ -155,7 +387,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
                 TOTAL
               </span>
             </div>
-            <p className="text-3xl font-bold text-white mb-2">{data.totalFindings}</p>
+            <p className="text-3xl font-bold text-white mb-2">{displayData.totalFindings}</p>
             <p className="text-blue-300 font-medium">Security Findings</p>
           </div>
 
@@ -166,7 +398,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
                 URGENT
               </span>
             </div>
-            <p className="text-3xl font-bold text-white mb-2">{data.criticalIssues}</p>
+            <p className="text-3xl font-bold text-white mb-2">{displayData.criticalIssues}</p>
             <p className="text-red-300 font-medium">Critical Issues</p>
           </div>
 
@@ -177,7 +409,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
                 STATUS
               </span>
             </div>
-            <p className="text-3xl font-bold text-white mb-2">{data.riskLevel}</p>
+            <p className="text-3xl font-bold text-white mb-2">{displayData.riskLevel}</p>
             <p className="text-orange-300 font-medium">Risk Level</p>
           </div>
 
@@ -188,7 +420,9 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
                 SYSTEM
               </span>
             </div>
-            <p className="text-3xl font-bold text-white mb-2">ONLINE</p>
+            <p className="text-3xl font-bold text-white mb-2">
+              {backendData ? backendData.system_status : 'ONLINE'}
+            </p>
             <p className="text-green-300 font-medium">Platform Status</p>
           </div>
         </div>
@@ -196,7 +430,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
     );
   }
 
-  // Other feature views can be added here
+  // Fallback for any unhandled features
   return (
     <div className="bg-gray-800 p-6 rounded-lg">
       <h1 className="text-3xl font-bold text-white mb-4 capitalize">
@@ -205,6 +439,9 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
       <p className="text-gray-400">
         Detailed analysis for {activeFeature.replace(/-/g, ' ')} will appear here.
       </p>
+      <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+        <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
+      </div>
     </div>
   );
 };

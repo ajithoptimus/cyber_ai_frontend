@@ -35,27 +35,65 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input; // Store input before clearing
     setInput('');
     setLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      console.log('🤖 Sending message to backend:', currentInput); // DEBUG LOG
+      
+      // REAL API CALL TO YOUR BACKEND
+      const response = await fetch('http://localhost:8000/api/v1/dashboard/frontend/assistant/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message: currentInput,
+          history: messages.slice(-5).map(m => ({ role: m.type, content: m.content }))
+        }),
+      });
+
+      console.log('🤖 Backend response status:', response.status); // DEBUG LOG
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('🤖 Backend response data:', data); // DEBUG LOG
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: getAIResponse(input),
+        content: data.response || 'Sorry, I\'m having trouble processing your request right now.',
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+    } catch (error) {
+      console.error('❌ AI Assistant error:', error);
+      
+      // Fallback to mock response if backend fails
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: `I'm having trouble connecting to the AI service right now. Here's what I can tell you about "${currentInput}": ${getAIResponse(currentInput)}`,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
+  // Keep the fallback function for error cases
   const getAIResponse = (query: string): string => {
     const responses = [
       "Based on your security analysis, I recommend immediate attention to the critical vulnerabilities identified. These pose significant risks to your infrastructure.",
-      "The high risk score indicates several security concerns that require executive-level decision making. Would you like me to prioritize these threats?",
+      "The high risk score indicates several security concerns that require executive-level decision making. Would you like me to prioritize these threats?", 
       "I can help you understand the threat landscape for your organization. The current findings suggest focusing on application security and network monitoring.",
       "The breach check results show potential exposure. I recommend implementing additional monitoring and updating your incident response procedures.",
       "Your DNS configuration has some security implications. I can provide specific recommendations to improve your security posture."
@@ -77,6 +115,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
         <h2 className="text-lg font-semibold text-white flex items-center">
           <Bot className="w-5 h-5 mr-2 text-blue-400" />
           AI Assistant
+          <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">LIVE</span>
         </h2>
         <p className="text-sm text-gray-400 mt-1">
           {disabled ? 'Complete analysis to enable AI assistant' : 'Ask me anything about your security analysis'}
@@ -121,10 +160,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
               </div>
               <div className="bg-gray-700 rounded-lg px-4 py-2">
                 <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                 </div>
+                <p className="text-xs text-gray-400 mt-1">Analyzing with AI...</p>
               </div>
             </div>
           </div>
@@ -138,7 +178,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={disabled ? "Complete analysis first..." : "Ask me anything..."}
+            placeholder={disabled ? "Complete analysis first..." : "Ask me anything about security..."}
             disabled={disabled}
             className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
@@ -156,5 +196,3 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
 };
 
 export default AIAssistant;
-
-
