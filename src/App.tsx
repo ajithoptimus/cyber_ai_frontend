@@ -32,7 +32,25 @@ function App() {
   const handleReset = () => {
     setHasAnalysis(false);
     setAnalysisData(null);
+    setActiveFeature('threat-intelligence'); // Reset to default feature
   };
+
+  // NEW: Features that don't require analysis
+  const alwaysAvailableFeatures = [
+    'github-integration',
+    'whois-lookup', 
+    'dns-records',
+    'ip-lookup',
+    'threat-check',
+    'breach-check',
+    'file-analysis'
+  ];
+
+  // NEW: Check if current feature is always available
+  const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
+
+  // NEW: Better condition for showing dashboard
+  const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -44,7 +62,7 @@ function App() {
           <Sidebar 
             activeFeature={activeFeature} 
             onFeatureSelect={setActiveFeature}
-            disabled={!hasAnalysis}
+            disabled={!hasAnalysis} // Still disabled for analysis-dependent features
           />
         </div>
 
@@ -52,9 +70,16 @@ function App() {
         <div className="flex-1 flex">
           {/* Dashboard/Landing Area */}
           <div className="flex-1 p-6">
-            {hasAnalysis && analysisData ? (
+            {shouldShowDashboard ? (
               <Dashboard 
-                data={analysisData} 
+                data={analysisData || {
+                  riskScore: 0,
+                  riskLevel: 'LOW',
+                  totalFindings: 0,
+                  criticalIssues: 0,
+                  threats: [],
+                  lastUpdated: new Date().toISOString()
+                }} 
                 activeFeature={activeFeature}
               />
             ) : (
@@ -64,7 +89,7 @@ function App() {
 
           {/* Right AI Assistant Panel */}
           <div className="w-96 bg-gray-800 border-l border-gray-700">
-            <AIAssistant disabled={!hasAnalysis} />
+            <AIAssistant disabled={!hasAnalysis && !isFeatureAlwaysAvailable} />
           </div>
         </div>
       </div>

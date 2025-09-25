@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, TrendingUp, Shield, Activity } from 'lucide-react';
 import FileUpload from './FileUpload'; // Import your existing FileUpload component
+import WhoisLookup from './WhoisLookup';
+import IPLookup from './IPLookup';
+import DNSLookup from './DNSLookup';
+import ThreatCheck from './ThreatCheck';
+import BreachCheck from './BreachCheck';
+import GitHubIntegration from './GitHubIntegration';
+
+// Add other OSINT components as we create them
+
+
+
 
 // NEW: API interface for backend data
 interface BackendDashboardData {
@@ -172,65 +183,29 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
     );
   }
 
-  // NEW: Handle other features
-  if (activeFeature === 'whois-lookup') {
-    return (
-      <div className="bg-gray-800 p-6 rounded-lg">
-        <h1 className="text-3xl font-bold text-white mb-4">WHOIS Lookup</h1>
-        <p className="text-gray-400">Domain information and ownership analysis will appear here.</p>
-        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
-          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
-        </div>
-      </div>
-    );
+  if (activeFeature === 'github-integration') {
+  return <GitHubIntegration />;
   }
+
+  if (activeFeature === 'whois-lookup') {
+  return <WhoisLookup />;
+  }
+
+  
 
   if (activeFeature === 'dns-records') {
-    return (
-      <div className="bg-gray-800 p-6 rounded-lg">
-        <h1 className="text-3xl font-bold text-white mb-4">DNS Records</h1>
-        <p className="text-gray-400">DNS configuration analysis and monitoring will appear here.</p>
-        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
-          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
-        </div>
-      </div>
-    );
+  return <DNSLookup />;
   }
-
+  
   if (activeFeature === 'ip-lookup') {
-    return (
-      <div className="bg-gray-800 p-6 rounded-lg">
-        <h1 className="text-3xl font-bold text-white mb-4">IP Lookup</h1>
-        <p className="text-gray-400">IP address analysis and geolocation services will appear here.</p>
-        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
-          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
-        </div>
-      </div>
-    );
+  return <IPLookup />;
   }
-
   if (activeFeature === 'threat-check') {
-    return (
-      <div className="bg-gray-800 p-6 rounded-lg">
-        <h1 className="text-3xl font-bold text-white mb-4">Threat Check</h1>
-        <p className="text-gray-400">Advanced threat analysis and IOC checking will appear here.</p>
-        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
-          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
-        </div>
-      </div>
-    );
+  return <ThreatCheck />;
   }
 
   if (activeFeature === 'breach-check') {
-    return (
-      <div className="bg-gray-800 p-6 rounded-lg">
-        <h1 className="text-3xl font-bold text-white mb-4">Breach Check</h1>
-        <p className="text-gray-400">Data breach monitoring and credential exposure checking will appear here.</p>
-        <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
-          <p className="text-blue-400">🚧 Feature under development - Coming soon!</p>
-        </div>
-      </div>
-    );
+  return <BreachCheck />;
   }
 
   if (activeFeature === 'ai-reports') {
