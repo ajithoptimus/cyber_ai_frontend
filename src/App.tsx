@@ -5,6 +5,17 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import AIAssistant from './components/AIAssistant';
 import LandingScreen from './components/LandingScreen';
+import InfrastructureAnalysis from './components/InfrastructureAnalysis';
+import SmartRiskDashboard from './components/SmartRiskDashboard';
+// Add missing imports
+import ThreatIntelligence from './components/ThreatCheck'; // Assuming ThreatCheck is ThreatIntelligence
+import WhoLookup from './components/WhoLookup';
+import DNSLookup from './components/DNSLookup';
+import IPLookup from './components/IPLookup';
+import ThreatCheck from './components/ThreatCheck';
+import BreachCheck from './components/BreachCheck';
+import FileUpload from './components/FileUpload';
+import GitHubIntegration from './components/GitHubIntegration';
 
 export interface AnalysisData {
   riskScore: number;
@@ -32,12 +43,14 @@ function App() {
   const handleReset = () => {
     setHasAnalysis(false);
     setAnalysisData(null);
-    setActiveFeature('threat-intelligence'); // Reset to default feature
+    setActiveFeature('threat-intelligence');
   };
 
-  // NEW: Features that don't require analysis
+  // Updated: Infrastructure Analysis and AI Risk Intelligence are always available
   const alwaysAvailableFeatures = [
     'github-integration',
+    'infrastructure-analysis',
+    'smart-risk-analysis',  // NEW: Added AI Risk Intelligence
     'whois-lookup', 
     'dns-records',
     'ip-lookup',
@@ -46,11 +59,38 @@ function App() {
     'file-analysis'
   ];
 
-  // NEW: Check if current feature is always available
   const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
-
-  // NEW: Better condition for showing dashboard
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
+
+  // UPDATED: Complete renderActiveFeature with SmartRiskDashboard
+  const renderActiveFeature = () => {
+    switch (activeFeature) {
+      case 'threat-intelligence':
+        return <ThreatIntelligence />;
+      case 'whois-lookup':
+        return <WhoLookup />;
+      case 'dns-records':
+        return <DNSLookup />;
+      case 'ip-lookup':
+        return <IPLookup />;
+      case 'threat-check':
+        return <ThreatCheck />;
+      case 'breach-check':
+        return <BreachCheck />;
+      case 'file-analysis':
+        return <FileUpload />;
+      case 'github-integration':
+        return <GitHubIntegration />;
+      case 'infrastructure-analysis':
+        return <InfrastructureAnalysis />;
+      case 'smart-risk-analysis':  // NEW: AI Risk Intelligence
+        return <SmartRiskDashboard />;
+      case 'ai-reports':
+        return <AIAssistant />;
+      default:
+        return <LandingScreen onAnalysisComplete={handleAnalysisComplete} />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -62,26 +102,17 @@ function App() {
           <Sidebar 
             activeFeature={activeFeature} 
             onFeatureSelect={setActiveFeature}
-            disabled={!hasAnalysis} // Still disabled for analysis-dependent features
+            disabled={!hasAnalysis}
           />
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 flex">
-          {/* Dashboard/Landing Area */}
+          {/* UPDATED: Use renderActiveFeature for feature-specific components */}
           <div className="flex-1 p-6">
             {shouldShowDashboard ? (
-              <Dashboard 
-                data={analysisData || {
-                  riskScore: 0,
-                  riskLevel: 'LOW',
-                  totalFindings: 0,
-                  criticalIssues: 0,
-                  threats: [],
-                  lastUpdated: new Date().toISOString()
-                }} 
-                activeFeature={activeFeature}
-              />
+              // Show specific feature component
+              renderActiveFeature()
             ) : (
               <LandingScreen onAnalysisComplete={handleAnalysisComplete} />
             )}
