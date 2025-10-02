@@ -9,10 +9,11 @@ import {
   Database, 
   FileText,
   Activity,
-  GitBranch,  // Existing GitHub import
-  Building2,  // NEW: Infrastructure Analysis icon
-  Brain       // NEW: For smart-risk-analysis
+  GitBranch,
+  Building2,
+  Brain
 } from 'lucide-react';
+
 
 interface SidebarProps {
   activeFeature: string;
@@ -30,8 +31,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
     { id: 'breach-check', name: 'Breach Check', icon: Database, color: 'text-orange-400' },
     { id: 'file-analysis', name: 'File Analysis', icon: FileText, color: 'text-cyan-400' },
     { id: 'github-integration', name: 'GitHub Security', icon: GitBranch, color: 'text-purple-500' },
-    { id: 'infrastructure-analysis', name: 'Infrastructure Analysis', icon: Building2, color: 'text-emerald-400' }, // NEW: Infrastructure Analysis
-    { id: 'smart-risk-analysis', name: 'AI Risk Intelligence', icon: Brain, color: 'text-purple-400' }, // NEW
+    { id: 'infrastructure-analysis', name: 'Infrastructure Analysis', icon: Building2, color: 'text-emerald-400' },
+    { id: 'smart-risk-analysis', name: 'AI Risk Intelligence', icon: Brain, color: 'text-purple-400' },
+    { id: 'ai-performance', name: 'AI Performance', icon: Brain, color: 'text-pink-400' }, // Added AI Performance
     { id: 'ai-reports', name: 'AI Reports', icon: Activity, color: 'text-pink-400' },
   ];
 
@@ -39,18 +41,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
     <div className="p-6 h-full">
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-300 mb-4">ANALYSIS TOOLS</h2>
-        {/* Enhanced status indicators */}
         <div className="space-y-1 text-xs text-gray-500">
           <div className="flex items-center">
             <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
             DevSecOps Pipeline: Active
           </div>
-          {/* NEW: Infrastructure scanning status */}
           <div className="flex items-center">
             <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></div>
             IaC & IAM Scanners: Online
           </div>
-          {/* NEW: AI Risk Intelligence status */}
           <div className="flex items-center">
             <div className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
             AI Risk Analysis: Active
@@ -62,11 +61,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activeFeature === tool.id;
-          
-          // GitHub Integration, Infrastructure Analysis, and AI Risk Intelligence are always available
-          const isAlwaysAvailable = tool.id === 'github-integration' || tool.id === 'infrastructure-analysis' || tool.id === 'smart-risk-analysis';
+          const isAlwaysAvailable = ['github-integration', 'infrastructure-analysis', 'smart-risk-analysis', 'ai-performance'].includes(tool.id);
+
           const isDisabled = disabled && !isAlwaysAvailable;
-          
+
           return (
             <button
               key={tool.id}
@@ -82,23 +80,26 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
             >
               <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-400' : tool.color}`} />
               <span className="font-medium">{tool.name}</span>
-              
+
               {/* Status badges for always-available features */}
               {tool.id === 'github-integration' && (
                 <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
                   LIVE
                 </span>
               )}
-              {/* NEW: Infrastructure Analysis badge */}
               {tool.id === 'infrastructure-analysis' && (
                 <span className="ml-auto text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">
                   6 SCANNERS
                 </span>
               )}
-              {/* NEW: AI Risk Intelligence badge */}
               {tool.id === 'smart-risk-analysis' && (
                 <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
                   AI POWERED
+                </span>
+              )}
+              {tool.id === 'ai-performance' && (
+                <span className="ml-auto text-xs bg-pink-500/20 text-pink-400 px-2 py-1 rounded-full">
+                  LIVE
                 </span>
               )}
             </button>
@@ -111,27 +112,27 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
           <p className="text-sm text-gray-400 text-center mb-3">
             Upload and analyze security data to access analysis tools
           </p>
-          {/* Enhanced always-available features note */}
           <div className="text-xs text-gray-400 text-center border-t border-gray-600 pt-3 space-y-1">
             <div className="flex items-center justify-center">
               <GitBranch className="w-3 h-3 mr-1 text-purple-400" />
               <span className="text-purple-400">GitHub Security</span>
             </div>
-            {/* NEW: Infrastructure Analysis always available */}
             <div className="flex items-center justify-center">
               <Building2 className="w-3 h-3 mr-1 text-emerald-400" />
               <span className="text-emerald-400">Infrastructure Analysis</span>
             </div>
-            {/* NEW: AI Risk Intelligence always available */}
             <div className="flex items-center justify-center">
               <Brain className="w-3 h-3 mr-1 text-purple-400" />
               <span className="text-purple-400">AI Risk Intelligence</span>
+            </div>
+            <div className="flex items-center justify-center">
+              <Brain className="w-3 h-3 mr-1 text-pink-400" />
+              <span className="text-pink-400">AI Performance</span>
             </div>
             <div className="text-gray-500">available anytime</div>
           </div>
         </div>
       )}
-      
     </div>
   );
 };

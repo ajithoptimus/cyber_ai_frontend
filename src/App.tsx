@@ -7,15 +7,7 @@ import AIAssistant from './components/AIAssistant';
 import LandingScreen from './components/LandingScreen';
 import InfrastructureAnalysis from './components/InfrastructureAnalysis';
 import SmartRiskDashboard from './components/SmartRiskDashboard';
-// Add missing imports
-import ThreatIntelligence from './components/ThreatCheck'; // Assuming ThreatCheck is ThreatIntelligence
-import WhoLookup from './components/WhoLookup';
-import DNSLookup from './components/DNSLookup';
-import IPLookup from './components/IPLookup';
-import ThreatCheck from './components/ThreatCheck';
-import BreachCheck from './components/BreachCheck';
-import FileUpload from './components/FileUpload';
-import GitHubIntegration from './components/GitHubIntegration';
+import AIPerformanceAnalytics from './components/AIPerformanceAnalytics'; // ADD THIS
 
 export interface AnalysisData {
   riskScore: number;
@@ -35,6 +27,9 @@ function App() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
+  // ADD DEBUG LOG
+  console.log('🔍 App.tsx - activeFeature:', activeFeature);
+
   const handleAnalysisComplete = (data: AnalysisData) => {
     setAnalysisData(data);
     setHasAnalysis(true);
@@ -46,11 +41,12 @@ function App() {
     setActiveFeature('threat-intelligence');
   };
 
-  // Updated: Infrastructure Analysis and AI Risk Intelligence are always available
+  // UPDATED: Add ai-performance to always available features
   const alwaysAvailableFeatures = [
     'github-integration',
     'infrastructure-analysis',
-    'smart-risk-analysis',  // NEW: Added AI Risk Intelligence
+    'smart-risk-analysis',
+    'ai-performance',  // ADD THIS
     'whois-lookup', 
     'dns-records',
     'ip-lookup',
@@ -62,33 +58,40 @@ function App() {
   const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
-  // UPDATED: Complete renderActiveFeature with SmartRiskDashboard
+  // UPDATED: Add ai-performance case
   const renderActiveFeature = () => {
+    console.log('🎯 Rendering feature:', activeFeature);
+    
     switch (activeFeature) {
-      case 'threat-intelligence':
-        return <ThreatIntelligence />;
-      case 'whois-lookup':
-        return <WhoLookup />;
-      case 'dns-records':
-        return <DNSLookup />;
-      case 'ip-lookup':
-        return <IPLookup />;
-      case 'threat-check':
-        return <ThreatCheck />;
-      case 'breach-check':
-        return <BreachCheck />;
-      case 'file-analysis':
-        return <FileUpload />;
-      case 'github-integration':
-        return <GitHubIntegration />;
       case 'infrastructure-analysis':
         return <InfrastructureAnalysis />;
-      case 'smart-risk-analysis':  // NEW: AI Risk Intelligence
+      
+      case 'smart-risk-analysis':
         return <SmartRiskDashboard />;
+      
+      case 'ai-performance':  // ADD THIS CASE
+        console.log('🤖 Rendering AI Performance Analytics');
+        return <AIPerformanceAnalytics />;
+      
       case 'ai-reports':
         return <AIAssistant />;
+      
+      // For all other features, use Dashboard component
       default:
-        return <LandingScreen onAnalysisComplete={handleAnalysisComplete} />;
+        console.log('📊 Rendering Dashboard for feature:', activeFeature);
+        return (
+          <Dashboard 
+            activeFeature={activeFeature}
+            data={analysisData || {
+              riskScore: 0,
+              riskLevel: 'LOW',
+              totalFindings: 0,
+              criticalIssues: 0,
+              threats: [],
+              lastUpdated: new Date().toISOString()
+            }}
+          />
+        );
     }
   };
 
@@ -101,17 +104,18 @@ function App() {
         <div className="w-80 bg-gray-800 border-r border-gray-700">
           <Sidebar 
             activeFeature={activeFeature} 
-            onFeatureSelect={setActiveFeature}
+            onFeatureSelect={(feature) => {
+              console.log('🔘 Feature selected:', feature);
+              setActiveFeature(feature);
+            }}
             disabled={!hasAnalysis}
           />
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 flex">
-          {/* UPDATED: Use renderActiveFeature for feature-specific components */}
           <div className="flex-1 p-6">
             {shouldShowDashboard ? (
-              // Show specific feature component
               renderActiveFeature()
             ) : (
               <LandingScreen onAnalysisComplete={handleAnalysisComplete} />
@@ -129,8 +133,3 @@ function App() {
 }
 
 export default App;
-
-
-// app.tsx/ cyber.ai frontend
-
-
