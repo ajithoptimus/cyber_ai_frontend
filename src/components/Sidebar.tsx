@@ -11,9 +11,12 @@ import {
   Activity,
   GitBranch,
   Building2,
-  Brain
+  Brain,
+  Zap,
+  Target,
+  Link,
+  TrendingUp
 } from 'lucide-react';
-
 
 interface SidebarProps {
   activeFeature: string;
@@ -33,12 +36,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
     { id: 'github-integration', name: 'GitHub Security', icon: GitBranch, color: 'text-purple-500' },
     { id: 'infrastructure-analysis', name: 'Infrastructure Analysis', icon: Building2, color: 'text-emerald-400' },
     { id: 'smart-risk-analysis', name: 'AI Risk Intelligence', icon: Brain, color: 'text-purple-400' },
-    { id: 'ai-performance', name: 'AI Performance', icon: Brain, color: 'text-pink-400' }, // Added AI Performance
+    { id: 'ai-detection', name: 'AI Detection', icon: Target, color: 'text-purple-500' },
+    { id: 'siem-integration', name: 'SIEM Integration', icon: Link, color: 'text-blue-500' },
+    { id: 'predictive-analytics', name: 'Predictive Analytics', icon: TrendingUp, color: 'text-green-500' },
+    { id: 'threat-intel-live', name: 'Live Threats', icon: Zap, color: 'text-red-500' },
+    { id: 'ai-performance', name: 'AI Performance', icon: Brain, color: 'text-pink-400' },
     { id: 'ai-reports', name: 'AI Reports', icon: Activity, color: 'text-pink-400' },
   ];
 
   return (
-    <div className="p-6 h-full">
+    <div className="p-6 h-full overflow-y-auto">
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-300 mb-4">ANALYSIS TOOLS</h2>
         <div className="space-y-1 text-xs text-gray-500">
@@ -61,7 +68,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activeFeature === tool.id;
-          const isAlwaysAvailable = ['github-integration', 'infrastructure-analysis', 'smart-risk-analysis', 'ai-performance'].includes(tool.id);
+          const isAlwaysAvailable = [
+            'github-integration', 
+            'infrastructure-analysis', 
+            'smart-risk-analysis', 
+            'ai-performance',
+            'threat-intel-live',
+            'ai-detection',
+            'siem-integration',
+            'predictive-analytics'
+          ].includes(tool.id);
 
           const isDisabled = disabled && !isAlwaysAvailable;
 
@@ -79,9 +95,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
               }`}
             >
               <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-400' : tool.color}`} />
-              <span className="font-medium">{tool.name}</span>
+              <span className="font-medium text-sm">{tool.name}</span>
 
-              {/* Status badges for always-available features */}
+              {/* Status badges */}
               {tool.id === 'github-integration' && (
                 <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
                   LIVE
@@ -94,12 +110,32 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
               )}
               {tool.id === 'smart-risk-analysis' && (
                 <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-                  AI POWERED
+                  AI
+                </span>
+              )}
+              {tool.id === 'ai-detection' && (
+                <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
+                  6A
+                </span>
+              )}
+              {tool.id === 'siem-integration' && (
+                <span className="ml-auto text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                  6B
+                </span>
+              )}
+              {tool.id === 'predictive-analytics' && (
+                <span className="ml-auto text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                  6C
+                </span>
+              )}
+              {tool.id === 'threat-intel-live' && (
+                <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full animate-pulse">
+                  6D
                 </span>
               )}
               {tool.id === 'ai-performance' && (
                 <span className="ml-auto text-xs bg-pink-500/20 text-pink-400 px-2 py-1 rounded-full">
-                  LIVE
+                  6E
                 </span>
               )}
             </button>
@@ -110,26 +146,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
       {disabled && (
         <div className="mt-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
           <p className="text-sm text-gray-400 text-center mb-3">
-            Upload and analyze security data to access analysis tools
+            Phase 6 Features Available Anytime
           </p>
-          <div className="text-xs text-gray-400 text-center border-t border-gray-600 pt-3 space-y-1">
-            <div className="flex items-center justify-center">
-              <GitBranch className="w-3 h-3 mr-1 text-purple-400" />
-              <span className="text-purple-400">GitHub Security</span>
-            </div>
-            <div className="flex items-center justify-center">
-              <Building2 className="w-3 h-3 mr-1 text-emerald-400" />
-              <span className="text-emerald-400">Infrastructure Analysis</span>
-            </div>
-            <div className="flex items-center justify-center">
-              <Brain className="w-3 h-3 mr-1 text-purple-400" />
-              <span className="text-purple-400">AI Risk Intelligence</span>
-            </div>
-            <div className="flex items-center justify-center">
-              <Brain className="w-3 h-3 mr-1 text-pink-400" />
-              <span className="text-pink-400">AI Performance</span>
-            </div>
-            <div className="text-gray-500">available anytime</div>
+          <div className="text-xs text-gray-500 text-center space-y-1">
+            <div>🎯 AI Detection • 🔗 SIEM • 🔮 Predictive</div>
+            <div>⚡ Live Threats • 📊 Performance</div>
           </div>
         </div>
       )}

@@ -7,7 +7,11 @@ import AIAssistant from './components/AIAssistant';
 import LandingScreen from './components/LandingScreen';
 import InfrastructureAnalysis from './components/InfrastructureAnalysis';
 import SmartRiskDashboard from './components/SmartRiskDashboard';
-import AIPerformanceAnalytics from './components/AIPerformanceAnalytics'; // ADD THIS
+import AIPerformanceAnalytics from './components/AIPerformanceAnalytics';
+import ThreatIntelligenceDashboard from './components/ThreatIntelligenceDashboard';
+import AIDetectionDashboard from './components/AIDetectionDashboard';
+import SIEMIntegrationDashboard from './components/SIEMIntegrationDashboard';
+import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashboard';
 
 export interface AnalysisData {
   riskScore: number;
@@ -27,7 +31,6 @@ function App() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
-  // ADD DEBUG LOG
   console.log('🔍 App.tsx - activeFeature:', activeFeature);
 
   const handleAnalysisComplete = (data: AnalysisData) => {
@@ -41,12 +44,16 @@ function App() {
     setActiveFeature('threat-intelligence');
   };
 
-  // UPDATED: Add ai-performance to always available features
+  // Always available features
   const alwaysAvailableFeatures = [
     'github-integration',
     'infrastructure-analysis',
     'smart-risk-analysis',
-    'ai-performance',  // ADD THIS
+    'ai-performance',
+    'threat-intel-live',
+    'ai-detection',
+    'siem-integration',
+    'predictive-analytics',
     'whois-lookup', 
     'dns-records',
     'ip-lookup',
@@ -58,7 +65,6 @@ function App() {
   const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
-  // UPDATED: Add ai-performance case
   const renderActiveFeature = () => {
     console.log('🎯 Rendering feature:', activeFeature);
     
@@ -69,14 +75,29 @@ function App() {
       case 'smart-risk-analysis':
         return <SmartRiskDashboard />;
       
-      case 'ai-performance':  // ADD THIS CASE
+      case 'ai-performance':
         console.log('🤖 Rendering AI Performance Analytics');
         return <AIPerformanceAnalytics />;
+      
+      case 'threat-intel-live':
+        console.log('🛡️ Rendering Threat Intelligence Dashboard');
+        return <ThreatIntelligenceDashboard />;
+      
+      case 'ai-detection':
+        console.log('🎯 Rendering AI Detection Dashboard');
+        return <AIDetectionDashboard />;
+      
+      case 'siem-integration':
+        console.log('🔗 Rendering SIEM Integration Dashboard');
+        return <SIEMIntegrationDashboard />;
+      
+      case 'predictive-analytics':
+        console.log('🔮 Rendering Predictive Analytics Dashboard');
+        return <PredictiveAnalyticsDashboard />;
       
       case 'ai-reports':
         return <AIAssistant />;
       
-      // For all other features, use Dashboard component
       default:
         console.log('📊 Rendering Dashboard for feature:', activeFeature);
         return (
@@ -133,3 +154,6 @@ function App() {
 }
 
 export default App;
+
+
+// app.tsx

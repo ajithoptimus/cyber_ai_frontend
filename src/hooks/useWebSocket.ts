@@ -1,5 +1,3 @@
-// Phase 6E: WebSocket Hook for Real-time Data
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface WebSocketMessage<T = any> {
@@ -30,47 +28,110 @@ export const useWebSocket = <T = any>({
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectCountRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const pingIntervalRef = useRef<NodeJS.Timeout>();
+  const isMountedRef = useRef(true); // ADD THIS
+
+  const disconnect = useCallback(() => {
+    console.log('🛑 Disconnecting WebSocket');
+    
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = undefined;
+    }
+    
+    if (wsRef.current) {
+      wsRef.current.close(1000, 'Component unmounting');
+      wsRef.current = null;
+    }
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = undefined;
+    }
+  }, []);
 
   const connect = useCallback(() => {
+    // Don't connect if component unmounted
+    if (!isMountedRef.current) return;
+    
     try {
+      console.log('🔄 Connecting to WebSocket:', url);
       const ws = new WebSocket(url);
 
       ws.onopen = () => {
+        if (!isMountedRef.current) {
+          ws.close();
+          return;
+        }
+        
+        console.log(`✅ WebSocket connected: ${url}`);
         setIsConnected(true);
         setError(null);
         reconnectCountRef.current = 0;
-        const pingInterval = setInterval(() => {
+        
+        // Send ping every 25 seconds to keep connection alive
+        pingIntervalRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
+            console.log('📤 Sending ping');
             ws.send('ping');
           }
-        }, 30000);
-        ws.onclose = () => clearInterval(pingInterval);
+        }, 25000);
       };
 
       ws.onmessage = (event) => {
+        if (!isMountedRef.current) return;
+        
         try {
+          console.log('📥 WebSocket raw message:', event.data);
+          
+          // Handle pong response
+          if (event.data === 'pong') {
+            console.log('📥 Received pong');
+            return;
+          }
+          
           const message: WebSocketMessage<T> = JSON.parse(event.data);
-          if (message.type === 'keepalive' || event.data === 'pong') return;
+          
+          // Handle keepalive
+          if (message.type === 'keepalive') {
+            console.log('📥 Received keepalive');
+            return;
+          }
+          
+          // Handle actual data
+          console.log('📊 Received data:', message.data);
           setData(message.data);
           onMessage?.(message.data);
         } catch (err) {
-          // Ignore non-JSON/pong
+          console.error('❌ Error parsing WebSocket message:', err);
         }
       };
 
       ws.onerror = (event) => {
+        console.error(`❌ WebSocket error:`, event);
         setError('WebSocket connection error');
         onError?.(event);
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        console.log(`🔌 WebSocket closed:`, event.code, event.reason);
         setIsConnected(false);
-        if (reconnectCountRef.current < reconnectAttempts) {
+        
+        // Clear ping interval
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = undefined;
+        }
+        
+        // Only reconnect if component is still mounted and not a normal closure
+        if (isMountedRef.current && event.code !== 1000 && reconnectCountRef.current < reconnectAttempts) {
           reconnectCountRef.current++;
+          console.log(`🔄 Reconnecting... (${reconnectCountRef.current}/${reconnectAttempts})`);
+          
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, reconnectDelay);
-        } else {
+        } else if (reconnectCountRef.current >= reconnectAttempts) {
           setError('WebSocket connection failed after maximum reconnection attempts');
         }
       };
@@ -78,20 +139,20 @@ export const useWebSocket = <T = any>({
       wsRef.current = ws;
 
     } catch (err) {
+      console.error('❌ WebSocket connection error:', err);
       setError('Failed to establish WebSocket connection');
     }
   }, [url, onMessage, onError, reconnectAttempts, reconnectDelay]);
 
-  const disconnect = useCallback(() => {
-    wsRef.current?.close();
-    wsRef.current = null;
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-  }, []);
-
   useEffect(() => {
+    isMountedRef.current = true;
     connect();
-    return () => disconnect();
-  }, [connect, disconnect]);
+    
+    return () => {
+      isMountedRef.current = false;
+      disconnect();
+    };
+  }, [url]); // ONLY url in dependencies!
 
   return {
     data,
