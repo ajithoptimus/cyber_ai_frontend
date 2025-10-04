@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -12,6 +12,7 @@ import ThreatIntelligenceDashboard from './components/ThreatIntelligenceDashboar
 import AIDetectionDashboard from './components/AIDetectionDashboard';
 import SIEMIntegrationDashboard from './components/SIEMIntegrationDashboard';
 import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashboard';
+import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 
 export interface AnalysisData {
   riskScore: number;
@@ -26,12 +27,67 @@ export interface AnalysisData {
   lastUpdated: string;
 }
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [hasAnalysis, setHasAnalysis] = useState(false);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
   console.log('🔍 App.tsx - activeFeature:', activeFeature);
+  console.log('🌐 Current URL:', location.pathname);
+
+  // URL to feature mapping
+  const urlToFeatureMap: Record<string, string> = {
+    '/': 'threat-intelligence',
+    '/threat-intelligence': 'threat-intelligence',
+    '/whois-lookup': 'whois-lookup',
+    '/dns-records': 'dns-records',
+    '/ip-lookup': 'ip-lookup',
+    '/threat-check': 'threat-check',
+    '/breach-check': 'breach-check',
+    '/file-analysis': 'file-analysis',
+    '/github': 'github-integration',
+    '/infrastructure': 'infrastructure-analysis',
+    '/risk': 'smart-risk-analysis',
+    '/ai-detection': 'ai-detection',
+    '/siem': 'siem-integration',
+    '/predictive': 'predictive-analytics',
+    '/live-threats': 'threat-intel-live',
+    '/ai-performance': 'ai-performance',
+    '/compliance': 'compliance-governance', // ← NEW
+    '/ai-reports': 'ai-reports'
+  };
+
+  // Feature to URL mapping (reverse)
+  const featureToUrlMap: Record<string, string> = {
+    'threat-intelligence': '/threat-intelligence',
+    'whois-lookup': '/whois-lookup',
+    'dns-records': '/dns-records',
+    'ip-lookup': '/ip-lookup',
+    'threat-check': '/threat-check',
+    'breach-check': '/breach-check',
+    'file-analysis': '/file-analysis',
+    'github-integration': '/github',
+    'infrastructure-analysis': '/infrastructure',
+    'smart-risk-analysis': '/risk',
+    'ai-detection': '/ai-detection',
+    'siem-integration': '/siem',
+    'predictive-analytics': '/predictive',
+    'threat-intel-live': '/live-threats',
+    'ai-performance': '/ai-performance',
+    'compliance-governance': '/compliance', // ← NEW
+    'ai-reports': '/ai-reports'
+  };
+
+  // Sync activeFeature with URL on mount and URL change
+  useEffect(() => {
+    const feature = urlToFeatureMap[location.pathname];
+    if (feature && feature !== activeFeature) {
+      console.log('📍 URL changed, setting feature:', feature);
+      setActiveFeature(feature);
+    }
+  }, [location.pathname]);
 
   const handleAnalysisComplete = (data: AnalysisData) => {
     setAnalysisData(data);
@@ -42,6 +98,19 @@ function App() {
     setHasAnalysis(false);
     setAnalysisData(null);
     setActiveFeature('threat-intelligence');
+    navigate('/');
+  };
+
+  // Handle feature selection from sidebar
+  const handleFeatureSelect = (feature: string) => {
+    console.log('🔘 Feature selected:', feature);
+    setActiveFeature(feature);
+    
+    // Update URL
+    const url = featureToUrlMap[feature] || '/';
+    if (location.pathname !== url) {
+      navigate(url);
+    }
   };
 
   // Always available features
@@ -54,7 +123,8 @@ function App() {
     'ai-detection',
     'siem-integration',
     'predictive-analytics',
-    'whois-lookup', 
+    'compliance-governance', // ← NEW
+    'whois-lookup',
     'dns-records',
     'ip-lookup',
     'threat-check',
@@ -67,41 +137,45 @@ function App() {
 
   const renderActiveFeature = () => {
     console.log('🎯 Rendering feature:', activeFeature);
-    
+
     switch (activeFeature) {
       case 'infrastructure-analysis':
         return <InfrastructureAnalysis />;
-      
+
       case 'smart-risk-analysis':
         return <SmartRiskDashboard />;
-      
+
       case 'ai-performance':
         console.log('🤖 Rendering AI Performance Analytics');
         return <AIPerformanceAnalytics />;
-      
+
       case 'threat-intel-live':
         console.log('🛡️ Rendering Threat Intelligence Dashboard');
         return <ThreatIntelligenceDashboard />;
-      
+
       case 'ai-detection':
         console.log('🎯 Rendering AI Detection Dashboard');
         return <AIDetectionDashboard />;
-      
+
       case 'siem-integration':
         console.log('🔗 Rendering SIEM Integration Dashboard');
         return <SIEMIntegrationDashboard />;
-      
+
       case 'predictive-analytics':
         console.log('🔮 Rendering Predictive Analytics Dashboard');
         return <PredictiveAnalyticsDashboard />;
-      
+
+      case 'compliance-governance':
+        console.log('📋 Rendering Compliance & Governance Dashboard');
+        return <ComplianceDashboard />;
+
       case 'ai-reports':
         return <AIAssistant />;
-      
+
       default:
         console.log('📊 Rendering Dashboard for feature:', activeFeature);
         return (
-          <Dashboard 
+          <Dashboard
             activeFeature={activeFeature}
             data={analysisData || {
               riskScore: 0,
@@ -119,23 +193,20 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Header onReset={handleReset} />
-      
+
       <div className="flex h-[calc(100vh-64px)]">
         {/* Left Sidebar */}
         <div className="w-80 bg-gray-800 border-r border-gray-700">
-          <Sidebar 
-            activeFeature={activeFeature} 
-            onFeatureSelect={(feature) => {
-              console.log('🔘 Feature selected:', feature);
-              setActiveFeature(feature);
-            }}
+          <Sidebar
+            activeFeature={activeFeature}
+            onFeatureSelect={handleFeatureSelect}
             disabled={!hasAnalysis}
           />
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex">
-          <div className="flex-1 p-6">
+        <div className="flex h-full">
+          <div className="flex-1 p-6 overflow-y-auto">
             {shouldShowDashboard ? (
               renderActiveFeature()
             ) : (
@@ -144,7 +215,7 @@ function App() {
           </div>
 
           {/* Right AI Assistant Panel */}
-          <div className="w-96 bg-gray-800 border-l border-gray-700">
+          <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
             <AIAssistant disabled={!hasAnalysis && !isFeatureAlwaysAvailable} />
           </div>
         </div>
@@ -153,7 +224,14 @@ function App() {
   );
 }
 
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/*" element={<AppContent />} />
+      </Routes>
+    </Router>
+  );
+}
+
 export default App;
-
-
-// app.tsx
