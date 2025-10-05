@@ -13,6 +13,7 @@ import AIDetectionDashboard from './components/AIDetectionDashboard';
 import SIEMIntegrationDashboard from './components/SIEMIntegrationDashboard';
 import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashboard';
 import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
+import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
 
 export interface AnalysisData {
   riskScore: number;
@@ -55,7 +56,8 @@ function AppContent() {
     '/predictive': 'predictive-analytics',
     '/live-threats': 'threat-intel-live',
     '/ai-performance': 'ai-performance',
-    '/compliance': 'compliance-governance', // ← NEW
+    '/compliance': 'compliance-governance',
+    '/incident-response': 'incident-response', // ← NEW
     '/ai-reports': 'ai-reports'
   };
 
@@ -76,7 +78,8 @@ function AppContent() {
     'predictive-analytics': '/predictive',
     'threat-intel-live': '/live-threats',
     'ai-performance': '/ai-performance',
-    'compliance-governance': '/compliance', // ← NEW
+    'compliance-governance': '/compliance',
+    'incident-response': '/incident-response', // ← NEW
     'ai-reports': '/ai-reports'
   };
 
@@ -123,7 +126,8 @@ function AppContent() {
     'ai-detection',
     'siem-integration',
     'predictive-analytics',
-    'compliance-governance', // ← NEW
+    'compliance-governance',
+    'incident-response', // ← NEW
     'whois-lookup',
     'dns-records',
     'ip-lookup',
@@ -169,6 +173,10 @@ function AppContent() {
         console.log('📋 Rendering Compliance & Governance Dashboard');
         return <ComplianceDashboard />;
 
+      case 'incident-response':
+        console.log('🚨 Rendering Incident Response Dashboard');
+        return <IncidentResponseDashboard />;
+
       case 'ai-reports':
         return <AIAssistant />;
 
@@ -204,8 +212,9 @@ function AppContent() {
           />
         </div>
 
-        {/* Main Content Area */}
-        <div className="flex h-full">
+        {/* Main Content + AI Assistant Container */}
+        <div className="flex h-full flex-1">
+          {/* Main Content Area */}
           <div className="flex-1 p-6 overflow-y-auto">
             {shouldShowDashboard ? (
               renderActiveFeature()

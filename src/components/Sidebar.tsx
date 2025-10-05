@@ -15,7 +15,9 @@ import {
   Zap,
   Target,
   Link,
-  TrendingUp
+  TrendingUp,
+  CheckCircle,
+  Siren
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,6 +43,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
     { id: 'predictive-analytics', name: 'Predictive Analytics', icon: TrendingUp, color: 'text-green-500' },
     { id: 'threat-intel-live', name: 'Live Threats', icon: Zap, color: 'text-red-500' },
     { id: 'ai-performance', name: 'AI Performance', icon: Brain, color: 'text-pink-400' },
+    { id: 'compliance-governance', name: 'Compliance & Governance', icon: CheckCircle, color: 'text-indigo-400' },
+    { id: 'incident-response', name: 'Incident Response', icon: Siren, color: 'text-red-400' },
     { id: 'ai-reports', name: 'AI Reports', icon: Activity, color: 'text-pink-400' },
   ];
 
@@ -76,7 +80,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
             'threat-intel-live',
             'ai-detection',
             'siem-integration',
-            'predictive-analytics'
+            'predictive-analytics',
+            'compliance-governance',
+            'incident-response'
           ].includes(tool.id);
 
           const isDisabled = disabled && !isAlwaysAvailable;
@@ -138,6 +144,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
                   6E
                 </span>
               )}
+              {tool.id === 'compliance-governance' && (
+                <span className="ml-auto text-xs bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full">
+                  7
+                </span>
+              )}
+              {tool.id === 'incident-response' && (
+                <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">
+                  8
+                </span>
+              )}
             </button>
           );
         })}
@@ -146,11 +162,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
       {disabled && (
         <div className="mt-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
           <p className="text-sm text-gray-400 text-center mb-3">
-            Phase 6 Features Available Anytime
+            Advanced Features Available Anytime
           </p>
           <div className="text-xs text-gray-500 text-center space-y-1">
             <div>🎯 AI Detection • 🔗 SIEM • 🔮 Predictive</div>
             <div>⚡ Live Threats • 📊 Performance</div>
+            <div>✅ Compliance • 🚨 Incident Response</div>
           </div>
         </div>
       )}
