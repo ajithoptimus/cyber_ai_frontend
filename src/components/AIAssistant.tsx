@@ -3,6 +3,13 @@ import { Send, Bot, User } from 'lucide-react';
 
 interface AIAssistantProps {
   disabled?: boolean;
+  dashboardContext?: {
+    riskScore?: number;
+    complianceLevel?: number;
+    openIncidents?: number;
+    criticalFindings?: number;
+    currentPage?: string;
+  };
 }
 
 interface Message {
@@ -12,7 +19,16 @@ interface Message {
   timestamp: Date;
 }
 
-const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
+const AIAssistant: React.FC<AIAssistantProps> = ({ 
+  disabled = false,
+  dashboardContext = {
+    riskScore: 72,
+    complianceLevel: 85,
+    openIncidents: 1,
+    criticalFindings: 3,
+    currentPage: 'threat-intelligence'
+  }
+}) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -27,7 +43,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom whenever messages change
+  // Auto-scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -36,18 +52,18 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
     scrollToBottom();
   }, [messages, typingText, isTyping]);
 
-  // Typing effect function
+  // Natural typing effect - word by word with variable speed
   const typeMessage = (text: string, messageId: string) => {
     setIsTyping(true);
     setTypingText('');
-    let currentIndex = 0;
+    
+    // Split into sentences for natural pauses
+    const sentences = text.split(/([.!?]\s+)/);
+    let fullText = '';
+    let sentenceIndex = 0;
 
-    const typingInterval = setInterval(() => {
-      if (currentIndex < text.length) {
-        setTypingText(prev => prev + text[currentIndex]);
-        currentIndex++;
-      } else {
-        clearInterval(typingInterval);
+    const typeSentence = () => {
+      if (sentenceIndex >= sentences.length) {
         setIsTyping(false);
         setTypingText('');
         
@@ -59,32 +75,35 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
+        return;
       }
-    }, 15); // Typing speed (lower = faster)
-  };
 
-  const getAIResponse = (query: string): string => {
-    const lowerQuery = query.toLowerCase();
-    
-    if (lowerQuery.includes('threat') || lowerQuery.includes('attack') || lowerQuery.includes('vulnerability')) {
-      return "Based on your security analysis, I recommend immediate attention to the critical vulnerabilities identified. These pose significant risks to your infrastructure. I can help you prioritize remediation efforts based on CVSS scores and exploit availability.";
-    } else if (lowerQuery.includes('compliance') || lowerQuery.includes('framework') || lowerQuery.includes('nist') || lowerQuery.includes('iso')) {
-      return "Your compliance dashboard shows you're at 85% for NIST CSF. The main gaps are in Access Control (AC-2) and Incident Response (IR-4). I can generate a detailed remediation plan with timeline and resource estimates. Would you like me to proceed?";
-    } else if (lowerQuery.includes('incident') || lowerQuery.includes('breach') || lowerQuery.includes('malware')) {
-      return "I see you have 1 open incident. The malware containment playbook has been executed successfully. All affected systems have been isolated. The MTTR for this incident is 12.5 minutes. Would you like to review the detailed timeline and forensic data?";
-    } else if (lowerQuery.includes('risk') || lowerQuery.includes('score')) {
-      return "Your overall risk score is 72/100 (Medium-High). The primary risk factors are: unpatched vulnerabilities (35%), weak access controls (25%), insufficient logging (18%), and missing security controls (22%). I recommend focusing on patch management first for maximum risk reduction.";
-    } else if (lowerQuery.includes('dashboard') || lowerQuery.includes('summary')) {
-      return "Here's your security posture summary: 12 findings analyzed, 3 critical issues detected, compliance at 85%, 1 active incident. Your GitHub security integration detected 2 high-severity vulnerabilities in recent commits. Infrastructure scan shows 6 configuration issues requiring attention.";
-    } else if (lowerQuery.includes('help') || lowerQuery.includes('what can') || lowerQuery.includes('assist')) {
-      return "I can help you with: threat analysis, compliance gap assessment, incident investigation, risk scoring, security recommendations, and report generation. I also provide context-aware insights based on your current security posture. What would you like assistance with?";
-    } else if (lowerQuery.includes('playbook') || lowerQuery.includes('automat') || lowerQuery.includes('soar')) {
-      return "Your SOAR platform has 4 active playbooks: Malware Containment, DDoS Mitigation, Data Breach Response, and Account Compromise Response. All playbooks have 0% success rate currently as they haven't been triggered yet. Would you like to test a playbook with a simulated incident?";
-    } else if (lowerQuery.includes('github') || lowerQuery.includes('code')) {
-      return "The GitHub Security Integration is actively monitoring your repositories. Recent scans detected 2 potential security issues: hardcoded credentials in config files and outdated dependencies with known CVEs. I recommend immediate remediation for the credential exposure.";
-    } else {
-      return "I'm analyzing your question. Based on your current security environment, I suggest reviewing the compliance dashboard for control gaps, checking the incident response system for any open incidents, and verifying your infrastructure scan results. How can I provide more specific assistance?";
-    }
+      const sentence = sentences[sentenceIndex];
+      const words = sentence.split(' ');
+      let wordIndex = 0;
+
+      const typeWord = () => {
+        if (wordIndex < words.length) {
+          fullText += (wordIndex > 0 ? ' ' : '') + words[wordIndex];
+          setTypingText(fullText);
+          wordIndex++;
+          
+          // Variable speed: faster for short words, slower for technical terms
+          const wordLength = words[wordIndex - 1]?.length || 0;
+          const delay = wordLength > 8 ? 80 : wordLength > 5 ? 60 : 40;
+          
+          setTimeout(typeWord, delay);
+        } else {
+          sentenceIndex++;
+          // Natural pause at end of sentence
+          setTimeout(typeSentence, sentence.match(/[.!?]/) ? 200 : 50);
+        }
+      };
+
+      typeWord();
+    };
+
+    typeSentence();
   };
 
   const sendMessage = async () => {
@@ -102,13 +121,85 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
     setInput('');
     setLoading(true);
 
-    // Simulate processing delay (like real AI)
-    setTimeout(() => {
+    try {
+      console.log('🤖 Sending message with context:', {
+        message: currentInput,
+        context: dashboardContext
+      });
+      
+      // REAL API CALL WITH DASHBOARD CONTEXT
+      const response = await fetch('http://localhost:8000/api/v1/dashboard/frontend/assistant/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          message: currentInput,
+          history: messages.slice(-5).map(m => ({ 
+            type: m.type, 
+            content: m.content 
+          })),
+          dashboard_context: {
+            risk_score: dashboardContext.riskScore || 72,
+            compliance_level: dashboardContext.complianceLevel || 85,
+            open_incidents: dashboardContext.openIncidents || 1,
+            critical_findings: dashboardContext.criticalFindings || 3,
+            current_page: dashboardContext.currentPage || 'unknown'
+          }
+        }),
+      });
+
+      console.log('🤖 Backend response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('🤖 Backend response data:', data);
+      
       setLoading(false);
       const messageId = (Date.now() + 1).toString();
-      const responseText = getAIResponse(currentInput);
+      const responseText = data.message || data.response || 'Sorry, I\'m having trouble processing that right now.';
+      
+      // Start natural typing effect
       typeMessage(responseText, messageId);
-    }, 800); // Thinking delay
+
+    } catch (error) {
+      console.error('❌ AI Assistant error:', error);
+      setLoading(false);
+      
+      // Fallback response
+      const messageId = (Date.now() + 1).toString();
+      const fallbackText = getFallbackResponse(currentInput, dashboardContext);
+      typeMessage(fallbackText, messageId);
+    }
+  };
+
+  // Enhanced fallback with context awareness
+  const getFallbackResponse = (query: string, context: typeof dashboardContext): string => {
+    const lowerQuery = query.toLowerCase();
+    const risk = context.riskScore || 72;
+    const compliance = context.complianceLevel || 85;
+    
+    if (lowerQuery.includes('threat') || lowerQuery.includes('attack') || lowerQuery.includes('vulnerability')) {
+      return `Based on your current risk score of ${risk}/100, I've identified ${context.criticalFindings || 3} critical threats requiring immediate attention.\n\nThe most urgent issues are unpatched vulnerabilities and weak access controls. These account for 60% of your overall risk.\n\nI recommend prioritizing patch management and implementing MFA across all admin accounts. This would reduce your risk score by approximately 25 points.\n\nWould you like me to generate a detailed remediation timeline?`;
+    }
+    
+    if (lowerQuery.includes('compliance') || lowerQuery.includes('nist') || lowerQuery.includes('iso')) {
+      return `Your current compliance status:\n\n**NIST CSF:** ${compliance}% ✅\n**ISO 27001:** 78% ⚠️\n**SOC 2:** 82% ✅\n\nMain gaps identified: Access Control (AC-2) and Incident Response (IR-4).\n\nImplementing MFA and documented playbooks would close the 15% gap to reach 100% compliance.\n\nShall I generate a detailed gap analysis report with timeline estimates?`;
+    }
+    
+    if (lowerQuery.includes('incident') || lowerQuery.includes('breach')) {
+      return `**Active Incident Status:**\n\n🚨 You have ${context.openIncidents || 1} open incident\n\nIncident: Malware Containment (INC-001)\nSeverity: HIGH\nStatus: Contained ✅\nMTTD: 8.5 minutes\nMTTR: 12.5 minutes\n\nAll affected systems have been isolated successfully. The automated SOAR playbook executed flawlessly.\n\nNext steps: Root cause analysis and system hardening.\n\nWould you like to see the detailed incident timeline?`;
+    }
+    
+    if (lowerQuery.includes('risk') || lowerQuery.includes('score')) {
+      return `**Current Risk Assessment:**\n\nOverall Risk Score: ${risk}/100 (${risk > 70 ? 'Medium-High' : 'Medium'}) ⚠️\n\nRisk breakdown:\n• Unpatched vulnerabilities: 35%\n• Weak access controls: 25%\n• Insufficient logging: 18%\n• Missing security controls: 22%\n\nPriority recommendation: Critical patch deployment would reduce your score to ${Math.max(risk - 25, 40)}/100.\n\nEstimated implementation time: 2-4 weeks.\n\nWant to see the detailed implementation roadmap?`;
+    }
+    
+    // Default contextual response
+    return `I'm analyzing your security environment.\n\n**Current Status:**\n• Risk Score: ${risk}/100\n• Compliance: ${compliance}%\n• Open Incidents: ${context.openIncidents || 1}\n• Critical Findings: ${context.criticalFindings || 3}\n\nI can help you with threat analysis, compliance gaps, incident investigation, or risk assessment.\n\nWhat specific area would you like to explore?`;
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -128,21 +219,24 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
           <span className="ml-2 text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">LIVE</span>
         </h2>
         <p className="text-sm text-gray-400 mt-1">
-          {disabled ? 'Complete analysis to enable AI assistant' : 'Ask me anything about your security analysis'}
+          {disabled 
+            ? 'Complete analysis to enable AI assistant' 
+            : `Ask me anything about your security analysis • Risk: ${dashboardContext.riskScore}/100`
+          }
         </p>
       </div>
 
-      {/* Messages Container with HIDDEN scrollbar */}
+      {/* Messages Container */}
       <div 
         className="flex-1 overflow-y-auto p-4 space-y-4"
         style={{
-          scrollbarWidth: 'none', /* Firefox */
-          msOverflowStyle: 'none',  /* IE and Edge */
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
         }}
       >
         <style>{`
           .flex-1.overflow-y-auto::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
+            display: none;
           }
         `}</style>
 
@@ -152,12 +246,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                 message.type === 'user' 
                   ? 'bg-blue-600' 
-                  : 'bg-gray-700'
+                  : 'bg-gradient-to-br from-blue-600 to-purple-600'
               }`}>
                 {message.type === 'user' ? (
                   <User className="w-4 h-4 text-white" />
                 ) : (
-                  <Bot className="w-4 h-4 text-blue-400" />
+                  <Bot className="w-4 h-4 text-white" />
                 )}
               </div>
               
@@ -179,12 +273,12 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
         {isTyping && typingText && (
           <div className="flex justify-start animate-fadeIn">
             <div className="flex items-start space-x-3 max-w-md">
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-blue-400" />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-4 h-4 text-white" />
               </div>
               <div className="bg-gray-700 text-gray-100 rounded-lg px-4 py-3">
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {typingText}<span className="inline-block w-2 h-4 bg-blue-400 ml-1 animate-pulse">|</span>
+                  {typingText}<span className="inline-block w-2 h-4 bg-blue-400 ml-1 animate-pulse">▋</span>
                 </p>
               </div>
             </div>
@@ -195,8 +289,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
         {loading && !isTyping && (
           <div className="flex justify-start animate-fadeIn">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-blue-400 animate-pulse" />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white animate-pulse" />
               </div>
               <div className="bg-gray-700 rounded-lg px-4 py-3">
                 <div className="flex space-x-2">
@@ -209,7 +303,6 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
           </div>
         )}
 
-        {/* Auto-scroll anchor */}
         <div ref={messagesEndRef} />
       </div>
 
@@ -228,7 +321,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ disabled = false }) => {
           <button
             onClick={sendMessage}
             disabled={disabled || !input.trim() || loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg px-4 py-2 transition-colors disabled:cursor-not-allowed flex-shrink-0"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-lg px-4 py-2 transition-all disabled:cursor-not-allowed flex-shrink-0 shadow-lg hover:shadow-xl"
           >
             <Send className="w-4 h-4" />
           </button>

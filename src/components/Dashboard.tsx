@@ -52,7 +52,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // DEBUG: Log active feature
   console.log('🔍 Dashboard rendered with activeFeature:', activeFeature);
 
   useEffect(() => {
@@ -64,10 +63,11 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const backendResult = await response.json();
+        console.log('✅ Backend data received:', backendResult);
         setBackendData(backendResult);
         setError(null);
       } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+        console.error('❌ Failed to fetch dashboard data:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch data');
       } finally {
         setLoading(false);
@@ -81,7 +81,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
     }
   }, [activeFeature]);
 
-  const displayData = backendData
+  // Safe data access with fallback
+  const displayData = backendData?.reputation_cards
     ? {
         riskScore: backendData.unified_risk_score,
         riskLevel: backendData.risk_level,
@@ -147,7 +148,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   // === FEATURE ROUTING ===
   
   if (activeFeature === 'file-analysis') {
-    console.log('📄 Rendering File Analysis');
     return (
       <div className="space-y-6">
         <div className="mb-8">
@@ -160,43 +160,34 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   }
 
   if (activeFeature === 'github-integration') {
-    console.log('🔗 Rendering GitHub Integration');
     return <GitHubIntegration />;
   }
 
   if (activeFeature === 'whois-lookup') {
-    console.log('🌐 Rendering WHOIS Lookup');
     return <WhoisLookup />;
   }
 
   if (activeFeature === 'dns-records') {
-    console.log('📡 Rendering DNS Lookup');
     return <DNSLookup />;
   }
 
   if (activeFeature === 'ip-lookup') {
-    console.log('🔍 Rendering IP Lookup');
     return <IPLookup />;
   }
 
   if (activeFeature === 'threat-check') {
-    console.log('⚠️ Rendering Threat Check');
     return <ThreatCheck />;
   }
 
   if (activeFeature === 'breach-check') {
-    console.log('🔓 Rendering Breach Check');
     return <BreachCheck />;
   }
 
-  // AI PERFORMANCE - ADD THIS BEFORE AI REPORTS
   if (activeFeature === 'ai-performance') {
-    console.log('🤖 Rendering AI Performance Analytics');
     return <AIPerformanceAnalytics />;
   }
 
   if (activeFeature === 'ai-reports') {
-    console.log('📊 Rendering AI Reports');
     return (
       <div className="bg-gray-800 p-6 rounded-lg">
         <h1 className="text-3xl font-bold text-white mb-4">AI Reports</h1>
@@ -209,10 +200,8 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   }
 
   if (activeFeature === 'threat-intelligence') {
-    console.log('🛡️ Rendering Threat Intelligence');
     return (
       <div className="space-y-6">
-        {/* ... YOUR EXISTING THREAT INTELLIGENCE CODE ... */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Threat Intelligence Dashboard</h1>
           <p className="text-gray-400">
@@ -220,12 +209,86 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             {backendData ? ' (Live Data)' : ' (Demo Data)'}
           </p>
         </div>
-        {/* ... rest of threat intelligence dashboard ... */}
+
+        {/* Risk Score Gauge */}
+        <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Overall Risk Score</h2>
+              <p className="text-gray-400">
+                Comprehensive security analysis based on {displayData.totalFindings} findings
+              </p>
+            </div>
+            <RiskGauge />
+          </div>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Total Findings</p>
+                <p className="text-3xl font-bold text-white mt-2">{displayData.totalFindings}</p>
+              </div>
+              <Activity className="w-12 h-12 text-blue-400" />
+            </div>
+          </div>
+
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Critical Issues</p>
+                <p className="text-3xl font-bold text-red-400 mt-2">{displayData.criticalIssues}</p>
+              </div>
+              <AlertCircle className="w-12 h-12 text-red-400" />
+            </div>
+          </div>
+
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-sm">Risk Level</p>
+                <p className={`text-3xl font-bold mt-2 ${getRiskColor(displayData.riskLevel)}`}>
+                  {displayData.riskLevel}
+                </p>
+              </div>
+              <Shield className="w-12 h-12 text-yellow-400" />
+            </div>
+          </div>
+        </div>
+
+        {/* Threat Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {displayData.threats.map((threat, index) => (
+            <div key={index} className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">{threat.type}</h3>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  threat.status === 'CLEAN' ? 'bg-green-500/20 text-green-400' :
+                  threat.status === 'VERIFIED' ? 'bg-blue-500/20 text-blue-400' :
+                  threat.status === 'CONFIGURED' ? 'bg-purple-500/20 text-purple-400' :
+                  'bg-yellow-500/20 text-yellow-400'
+                }`}>
+                  {threat.status}
+                </span>
+              </div>
+              <p className="text-gray-400 text-sm">{threat.description}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-900/20 border border-red-500 p-4 rounded-lg">
+            <p className="text-red-400">Error loading data: {error}</p>
+          </div>
+        )}
       </div>
     );
   }
 
-  console.log('❓ Rendering fallback for feature:', activeFeature);
+  // Fallback
   return (
     <div className="bg-gray-800 p-6 rounded-lg">
       <h1 className="text-3xl font-bold text-white mb-4 capitalize">{activeFeature.replace(/-/g, ' ')}</h1>

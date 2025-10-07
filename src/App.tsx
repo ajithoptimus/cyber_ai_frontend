@@ -14,6 +14,7 @@ import SIEMIntegrationDashboard from './components/SIEMIntegrationDashboard';
 import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashboard';
 import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
+import AIReportsDashboard from './components/AIReportsDashboard';  // ← ADD THIS IMPORT
 
 export interface AnalysisData {
   riskScore: number;
@@ -57,7 +58,7 @@ function AppContent() {
     '/live-threats': 'threat-intel-live',
     '/ai-performance': 'ai-performance',
     '/compliance': 'compliance-governance',
-    '/incident-response': 'incident-response', // ← NEW
+    '/incident-response': 'incident-response',
     '/ai-reports': 'ai-reports'
   };
 
@@ -79,7 +80,7 @@ function AppContent() {
     'threat-intel-live': '/live-threats',
     'ai-performance': '/ai-performance',
     'compliance-governance': '/compliance',
-    'incident-response': '/incident-response', // ← NEW
+    'incident-response': '/incident-response',
     'ai-reports': '/ai-reports'
   };
 
@@ -127,7 +128,8 @@ function AppContent() {
     'siem-integration',
     'predictive-analytics',
     'compliance-governance',
-    'incident-response', // ← NEW
+    'incident-response',
+    'ai-reports',  // ← ADD THIS
     'whois-lookup',
     'dns-records',
     'ip-lookup',
@@ -178,7 +180,8 @@ function AppContent() {
         return <IncidentResponseDashboard />;
 
       case 'ai-reports':
-        return <AIAssistant />;
+        console.log('📊 Rendering AI Reports Dashboard');
+        return <AIReportsDashboard />;  // ← FIXED: was AIAssistant, now correct
 
       default:
         console.log('📊 Rendering Dashboard for feature:', activeFeature);
@@ -225,7 +228,16 @@ function AppContent() {
 
           {/* Right AI Assistant Panel */}
           <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
-            <AIAssistant disabled={!hasAnalysis && !isFeatureAlwaysAvailable} />
+            <AIAssistant 
+              disabled={!hasAnalysis && !isFeatureAlwaysAvailable}
+              dashboardContext={{
+                riskScore: analysisData?.riskScore || 72,
+                complianceLevel: 85,
+                openIncidents: 1,
+                criticalFindings: analysisData?.criticalIssues || 3,
+                currentPage: activeFeature
+              }}
+            />
           </div>
         </div>
       </div>

@@ -17,7 +17,8 @@ import {
   Link,
   TrendingUp,
   CheckCircle,
-  Siren
+  Siren,
+  Sparkles  // ← ADD THIS for better AI Reports icon
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -45,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
     { id: 'ai-performance', name: 'AI Performance', icon: Brain, color: 'text-pink-400' },
     { id: 'compliance-governance', name: 'Compliance & Governance', icon: CheckCircle, color: 'text-indigo-400' },
     { id: 'incident-response', name: 'Incident Response', icon: Siren, color: 'text-red-400' },
-    { id: 'ai-reports', name: 'AI Reports', icon: Activity, color: 'text-pink-400' },
+    { id: 'ai-reports', name: 'AI Reports', icon: Sparkles, color: 'text-pink-400' },  // ← Changed icon to Sparkles
   ];
 
   return (
@@ -82,7 +83,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
             'siem-integration',
             'predictive-analytics',
             'compliance-governance',
-            'incident-response'
+            'incident-response',
+            'ai-reports',  // ← ADD THIS LINE - THIS IS THE FIX!
+            'whois-lookup',
+            'dns-records',
+            'ip-lookup',
+            'threat-check',
+            'breach-check',
+            'file-analysis'
           ].includes(tool.id);
 
           const isDisabled = disabled && !isAlwaysAvailable;
@@ -154,6 +162,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
                   8
                 </span>
               )}
+              {/* ADD AI REPORTS BADGE */}
+              {tool.id === 'ai-reports' && (
+                <span className="ml-auto text-xs bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-400 px-2 py-1 rounded-full">
+                  AI
+                </span>
+              )}
             </button>
           );
         })}
@@ -168,6 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
             <div>🎯 AI Detection • 🔗 SIEM • 🔮 Predictive</div>
             <div>⚡ Live Threats • 📊 Performance</div>
             <div>✅ Compliance • 🚨 Incident Response</div>
+            <div>✨ AI Reports • 🔍 All Analysis Tools</div>
           </div>
         </div>
       )}
