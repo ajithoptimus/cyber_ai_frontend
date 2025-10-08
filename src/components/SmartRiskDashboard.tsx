@@ -6,7 +6,8 @@ interface CompoundRisk {
   base_risk: number;
   compound_risk: number;
   attack_scenarios: string[];
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  affected_resources?: number;
 }
 
 interface IntelligentAnalysis {
@@ -32,11 +33,10 @@ const SmartRiskDashboard: React.FC = () => {
   useEffect(() => {
     fetchIntelligentRiskAnalysis();
 
-    // Auto-refresh every 30 seconds if enabled
     let interval: NodeJS.Timeout | null = null;
     if (autoRefresh) {
       interval = setInterval(() => {
-        fetchIntelligentRiskAnalysis(true); // Silent refresh
+        fetchIntelligentRiskAnalysis(true);
       }, 30000);
     }
 
@@ -56,7 +56,7 @@ const SmartRiskDashboard: React.FC = () => {
       const response = await fetch('http://localhost:8000/api/v1/infrastructure/risk-analysis');
       
       if (response.ok) {
-        const data = await response.json();
+        const data: RiskAnalysisData = await response.json();
         setRiskData(data);
         setLastUpdated(new Date());
         console.log('✅ Risk analysis data fetched:', data);
@@ -116,24 +116,24 @@ const SmartRiskDashboard: React.FC = () => {
     setLastUpdated(new Date());
   };
 
-  const getRiskColor = (level: string) => {
-    const colors = {
+  const getRiskColor = (level: string): string => {
+    const colors: Record<string, string> = {
       CRITICAL: 'text-red-400 bg-red-500/20 border-red-500/30',
       HIGH: 'text-orange-400 bg-orange-500/20 border-orange-500/30',
       MEDIUM: 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30',
       LOW: 'text-blue-400 bg-blue-500/20 border-blue-500/30'
     };
-    return colors[level as keyof typeof colors] || colors.MEDIUM;
+    return colors[level] || colors.MEDIUM;
   };
 
-  const getRiskScoreColor = (score: number) => {
+  const getRiskScoreColor = (score: number): string => {
     if (score >= 8.0) return 'text-red-400';
     if (score >= 6.0) return 'text-orange-400';
     if (score >= 4.0) return 'text-yellow-400';
     return 'text-blue-400';
   };
 
-  const formatTimestamp = (date: Date | null) => {
+  const formatTimestamp = (date: Date | null): string => {
     if (!date) return 'Never';
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -275,7 +275,9 @@ const SmartRiskDashboard: React.FC = () => {
                       Risk Multiplier: {risk.compound_risk.toFixed(1)}x
                     </span>
                   </div>
-                  <span className="text-sm text-gray-400">Base Risk: <span className="font-semibold text-white">{risk.base_risk.toFixed(1)}/10</span></span>
+                  <span className="text-sm text-gray-400">
+                    Base Risk: <span className="font-semibold text-white">{risk.base_risk.toFixed(1)}/10</span>
+                  </span>
                 </div>
                 
                 <h4 className="font-semibold text-white text-lg mb-4">{risk.component}</h4>
