@@ -356,3 +356,6 @@ const SmartRiskDashboard: React.FC = () => {
 };
 
 export default SmartRiskDashboard;
+
+
+//  smart dashboard 
