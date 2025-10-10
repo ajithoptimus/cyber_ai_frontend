@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import ScanResultsTable from './ScanResultsTable';
+import { exportToCSV, exportToJSON, exportToTXT } from '../utils/exportUtils';
+import FileResultsCard from './FileResultsCard';
+
 
 const InfrastructureAnalysis = () => {
   const [loading, setLoading] = useState(false);
@@ -7,6 +11,7 @@ const InfrastructureAnalysis = () => {
   const [scanning, setScanning] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [scanResults, setScanResults] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
   const [summary, setSummary] = useState({
     total_findings: 0,
     iac_findings: 0,
@@ -19,36 +24,64 @@ const InfrastructureAnalysis = () => {
   });
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const fileList = event.target.files;
+    if (!fileList || fileList.length === 0) return;
     
-    setUploadedFile(file);
+    const filesArray = Array.from(fileList);
+    
+    setUploadedFile(filesArray[0]); // For display purposes
     setScanning(true);
     setLoading(true);
     
-    const formData = new FormData();
-    formData.append('file', file);
-    
     try {
-      const response = await fetch('http://localhost:8000/api/v1/infrastructure/scan', {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Scan failed: ${response.statusText}`);
+      if (filesArray.length > 1) {
+        // Batch scan
+        const formData = new FormData();
+        filesArray.forEach(file => {
+          formData.append('files', file);
+        });
+        
+        const response = await fetch('http://localhost:8000/api/v1/infrastructure/scan/batch', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Batch scan failed: ${response.statusText}`);
+        }
+        
+        const results = await response.json();
+        console.log('✅ Batch scan results:', results);
+        
+        setScanResults(results);
+        setFindings(results.findings || []);
+        setSummary(results.summary || summary);
+      } else {
+        // Single file scan
+        const formData = new FormData();
+        formData.append('file', filesArray[0]);
+        
+        const response = await fetch('http://localhost:8000/api/v1/infrastructure/scan', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Scan failed: ${response.statusText}`);
+        }
+        
+        const results = await response.json();
+        console.log('✅ Scan results:', results);
+        
+        setScanResults(results);
+        setFindings(results.findings || []);
+        setSummary(results.summary || summary);
       }
       
-      const results = await response.json();
-      console.log('✅ Scan results:', results);
-      
-      setScanResults(results);
-      setFindings(results.findings || []);
-      setSummary(results.summary || summary);
       setLoading(false);
     } catch (error) {
       console.error('❌ Scan failed:', error);
-      alert(`Failed to scan file: ${error.message}`);
+      alert(`Failed to scan files: ${error.message}`);
       setLoading(false);
     } finally {
       setScanning(false);
@@ -64,11 +97,10 @@ const InfrastructureAnalysis = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      // Simulate file input change event
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
       const fakeEvent = {
-        target: { files: [file] }
+        target: { files: files }
       } as any;
       handleFileUpload(fakeEvent);
     }
@@ -131,6 +163,7 @@ const InfrastructureAnalysis = () => {
             accept=".tf,.yaml,.yml,.json,.tfvars"
             onChange={handleFileUpload}
             disabled={scanning}
+            multiple
           />
           <label 
             htmlFor="iac-file-upload" 
@@ -139,7 +172,11 @@ const InfrastructureAnalysis = () => {
             {scanning ? (
               <div className="text-emerald-400">
                 <div className="animate-spin inline-block w-12 h-12 border-4 border-emerald-400 border-t-transparent rounded-full mb-4"></div>
-                <p className="font-medium text-lg">Analyzing {uploadedFile?.name}...</p>
+                <p className="font-medium text-lg">
+                  {scanResults?.scan_type === 'batch' 
+                    ? `Analyzing ${scanResults?.files_scanned || 'multiple'} files...`
+                    : `Analyzing ${uploadedFile?.name}...`}
+                </p>
                 <p className="text-sm text-gray-400 mt-2">Scanning for security misconfigurations</p>
               </div>
             ) : (
@@ -150,6 +187,9 @@ const InfrastructureAnalysis = () => {
                 </p>
                 <p className="text-gray-400 text-sm mb-3">
                   Supported formats: Terraform (.tf), CloudFormation (.yaml), Kubernetes (.yml), IAM Policies (.json)
+                </p>
+                <p className="text-emerald-400 text-xs mb-3">
+                  ✨ NEW: Select multiple files for batch scanning!
                 </p>
                 <div className="flex justify-center space-x-4 text-xs text-gray-500">
                   <span>🔹 Terraform</span>
@@ -162,6 +202,7 @@ const InfrastructureAnalysis = () => {
           </label>
         </div>
         
+        {/* Scan Completed Banner with Export Buttons */}
         {uploadedFile && !scanning && scanResults && (
           <div className="mt-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
             <div className="flex items-center justify-between">
@@ -170,30 +211,70 @@ const InfrastructureAnalysis = () => {
                 <div>
                   <p className="text-white font-medium">Scan Completed</p>
                   <p className="text-gray-400 text-sm">
-                    File: {uploadedFile.name} | Type: {scanResults.file_type} | Findings: {scanResults.total_findings}
+                    {scanResults?.scan_type === 'batch' 
+                      ? `Files Scanned: ${scanResults.files_scanned} | Total Findings: ${scanResults.total_findings}`
+                      : `File: ${uploadedFile.name} | Type: ${scanResults.file_type} | Findings: ${scanResults.total_findings}`}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  setUploadedFile(null);
-                  setScanResults(null);
-                  setFindings([]);
-                  setSummary({
-                    total_findings: 0,
-                    iac_findings: 0,
-                    iam_findings: 0,
-                    critical: 0,
-                    high: 0,
-                    medium: 0,
-                    low: 0,
-                    info: 0
-                  });
-                }}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Clear Results
-              </button>
+              
+              {/* Export & Clear Buttons */}
+              <div className="flex items-center space-x-2">
+                {/* Export Dropdown */}
+                <div className="relative group">
+                  <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    <span>📥</span>
+                    <span>Export</span>
+                    <span>▼</span>
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                    <button
+                      onClick={() => exportToCSV(findings, scanResults, `${uploadedFile.name.split('.')[0]}-scan.csv`)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-600 text-white rounded-t-lg flex items-center space-x-2"
+                    >
+                      <span>📊</span>
+                      <span>Export as CSV</span>
+                    </button>
+                    <button
+                      onClick={() => exportToJSON(scanResults, `${uploadedFile.name.split('.')[0]}-scan.json`)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-600 text-white flex items-center space-x-2"
+                    >
+                      <span>📄</span>
+                      <span>Export as JSON</span>
+                    </button>
+                    <button
+                      onClick={() => exportToTXT(scanResults, `${uploadedFile.name.split('.')[0]}-report.txt`)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-600 text-white rounded-b-lg flex items-center space-x-2"
+                    >
+                      <span>📝</span>
+                      <span>Export as Report</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setUploadedFile(null);
+                    setScanResults(null);
+                    setFindings([]);
+                    setSummary({
+                      total_findings: 0,
+                      iac_findings: 0,
+                      iam_findings: 0,
+                      critical: 0,
+                      high: 0,
+                      medium: 0,
+                      low: 0,
+                      info: 0
+                    });
+                  }}
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  Clear Results
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -275,88 +356,132 @@ const InfrastructureAnalysis = () => {
         </div>
       )}
 
-      {/* Category Filter */}
+
+      {/* File-by-File Results - Only for Batch Scans */}
+      {scanResults?.scan_type === 'batch' && scanResults?.file_results && (
+        <FileResultsCard 
+          fileResults={scanResults.file_results}
+          findings={findings}
+          onFileSelect={(filename) => {
+            // Optional: Filter findings by selected file
+            console.log('Selected file:', filename);
+          }}
+        />
+      )}
+
+
+      {/* Category Filter & View Mode Toggle */}
       {findings.length > 0 && (
-        <div className="flex space-x-2">
-          {[
-            { key: 'all', label: 'All Findings', count: findings.length },
-            { key: 'iac', label: 'Infrastructure as Code', count: summary.iac_findings },
-            { key: 'iam', label: 'Identity & Access Management', count: summary.iam_findings }
-          ].map(category => (
+        <div className="flex justify-between items-center">
+          <div className="flex space-x-2">
+            {[
+              { key: 'all', label: 'All Findings', count: findings.length },
+              { key: 'iac', label: 'Infrastructure as Code', count: summary.iac_findings },
+              { key: 'iam', label: 'Identity & Access Management', count: summary.iam_findings }
+            ].map(category => (
+              <button
+                key={category.key}
+                onClick={() => setActiveCategory(category.key)}
+                className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                  activeCategory === category.key
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                {category.label} ({category.count})
+              </button>
+            ))}
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex space-x-2">
             <button
-              key={category.key}
-              onClick={() => setActiveCategory(category.key)}
+              onClick={() => setViewMode('table')}
               className={`px-4 py-2 rounded-lg transition-colors font-medium ${
-                activeCategory === category.key
-                  ? 'bg-emerald-600 text-white'
+                viewMode === 'table'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
               }`}
             >
-              {category.label} ({category.count})
+              📊 Table View
             </button>
-          ))}
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 rounded-lg transition-colors font-medium ${
+                viewMode === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              📋 List View
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Findings List */}
+      {/* Findings Display - Table or List */}
       {findings.length > 0 ? (
-        <div className="bg-gray-800 rounded-lg border border-gray-700">
-          <div className="p-6 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-white">Infrastructure Security Findings</h3>
-            <p className="text-gray-400 text-sm">
-              Detailed analysis from IaC and IAM scanners - {filteredFindings.length} findings shown
-            </p>
-          </div>
-          
-          <div className="p-6">
-            <div className="space-y-4">
-              {filteredFindings.map((finding: any, index: number) => (
-                <div key={finding.id || index} className="border border-gray-700 rounded-lg p-5 hover:bg-gray-700/50 transition-colors">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-3 py-1 rounded text-xs font-bold ${getSeverityColor(finding.severity)}`}>
-                        {finding.severity}
-                      </span>
-                      <span className="bg-gray-600 text-gray-300 px-3 py-1 rounded text-xs font-medium">
-                        {finding.type}
-                      </span>
+        viewMode === 'table' ? (
+          <ScanResultsTable findings={filteredFindings} />
+        ) : (
+          <div className="bg-gray-800 rounded-lg border border-gray-700">
+            <div className="p-6 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white">Infrastructure Security Findings</h3>
+              <p className="text-gray-400 text-sm">
+                Detailed analysis from IaC and IAM scanners - {filteredFindings.length} findings shown
+              </p>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-4">
+                {filteredFindings.map((finding: any, index: number) => (
+                  <div key={finding.id || index} className="border border-gray-700 rounded-lg p-5 hover:bg-gray-700/50 transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-3 py-1 rounded text-xs font-bold ${getSeverityColor(finding.severity)}`}>
+                          {finding.severity}
+                        </span>
+                        <span className="bg-gray-600 text-gray-300 px-3 py-1 rounded text-xs font-medium">
+                          {finding.type}
+                        </span>
+                      </div>
+                      <span className="text-sm text-gray-500">{finding.file}</span>
                     </div>
-                    <span className="text-sm text-gray-500">{finding.file}</span>
-                  </div>
-                  
-                  <h4 className="font-semibold text-white text-lg mb-2">{finding.title}</h4>
-                  <p className="text-gray-300 mb-3">{finding.description}</p>
-                  
-                  {finding.line > 0 && (
-                    <div className="text-sm text-gray-400 mb-3 font-mono bg-gray-900 p-2 rounded">
-                      <span className="text-gray-500">Line {finding.line}:</span> 
-                      <span className="text-gray-300 ml-2">{finding.code_snippet}</span>
-                    </div>
-                  )}
-                  
-                  <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <span className="text-blue-400 text-xl">🛡️</span>
-                      <div>
-                        <p className="text-blue-300 text-sm font-semibold mb-1">Remediation</p>
-                        <p className="text-blue-200 text-sm">{finding.remediation}</p>
-                        {finding.compliance && finding.compliance.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {finding.compliance.map((comp: string, idx: number) => (
-                              <span key={idx} className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
-                                {comp}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                    
+                    <h4 className="font-semibold text-white text-lg mb-2">{finding.title}</h4>
+                    <p className="text-gray-300 mb-3">{finding.description}</p>
+                    
+                    {finding.line > 0 && (
+                      <div className="text-sm text-gray-400 mb-3 font-mono bg-gray-900 p-2 rounded">
+                        <span className="text-gray-500">Line {finding.line}:</span> 
+                        <span className="text-gray-300 ml-2">{finding.code_snippet}</span>
+                      </div>
+                    )}
+                    
+                    <div className="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <span className="text-blue-400 text-xl">🛡️</span>
+                        <div>
+                          <p className="text-blue-300 text-sm font-semibold mb-1">Remediation</p>
+                          <p className="text-blue-200 text-sm">{finding.remediation}</p>
+                          {finding.compliance && finding.compliance.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {finding.compliance.map((comp: string, idx: number) => (
+                                <span key={idx} className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">
+                                  {comp}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )
       ) : !loading && !scanning && (
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-12 text-center">
           <div className="text-6xl mb-4">🔍</div>
