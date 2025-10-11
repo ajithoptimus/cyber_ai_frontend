@@ -14,7 +14,9 @@ import SIEMIntegrationDashboard from './components/SIEMIntegrationDashboard';
 import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashboard';
 import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
-import AIReportsDashboard from './components/AIReportsDashboard';  // ← ADD THIS IMPORT
+import AIReportsDashboard from './components/AIReportsDashboard';
+import { RiskScoreDashboard } from './components/RiskScoreDashboard';
+
 
 export interface AnalysisData {
   riskScore: number;
@@ -29,6 +31,7 @@ export interface AnalysisData {
   lastUpdated: string;
 }
 
+
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,8 +39,10 @@ function AppContent() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
+
   console.log('🔍 App.tsx - activeFeature:', activeFeature);
   console.log('🌐 Current URL:', location.pathname);
+
 
   // URL to feature mapping
   const urlToFeatureMap: Record<string, string> = {
@@ -62,6 +67,7 @@ function AppContent() {
     '/ai-reports': 'ai-reports'
   };
 
+
   // Feature to URL mapping (reverse)
   const featureToUrlMap: Record<string, string> = {
     'threat-intelligence': '/threat-intelligence',
@@ -84,6 +90,7 @@ function AppContent() {
     'ai-reports': '/ai-reports'
   };
 
+
   // Sync activeFeature with URL on mount and URL change
   useEffect(() => {
     const feature = urlToFeatureMap[location.pathname];
@@ -93,10 +100,12 @@ function AppContent() {
     }
   }, [location.pathname]);
 
+
   const handleAnalysisComplete = (data: AnalysisData) => {
     setAnalysisData(data);
     setHasAnalysis(true);
   };
+
 
   const handleReset = () => {
     setHasAnalysis(false);
@@ -104,6 +113,7 @@ function AppContent() {
     setActiveFeature('threat-intelligence');
     navigate('/');
   };
+
 
   // Handle feature selection from sidebar
   const handleFeatureSelect = (feature: string) => {
@@ -117,6 +127,7 @@ function AppContent() {
     }
   };
 
+
   // Always available features
   const alwaysAvailableFeatures = [
     'github-integration',
@@ -129,7 +140,7 @@ function AppContent() {
     'predictive-analytics',
     'compliance-governance',
     'incident-response',
-    'ai-reports',  // ← ADD THIS
+    'ai-reports',
     'whois-lookup',
     'dns-records',
     'ip-lookup',
@@ -138,50 +149,63 @@ function AppContent() {
     'file-analysis'
   ];
 
+
   const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
+
   const renderActiveFeature = () => {
     console.log('🎯 Rendering feature:', activeFeature);
+
 
     switch (activeFeature) {
       case 'infrastructure-analysis':
         return <InfrastructureAnalysis />;
 
+
       case 'smart-risk-analysis':
         return <SmartRiskDashboard />;
+
 
       case 'ai-performance':
         console.log('🤖 Rendering AI Performance Analytics');
         return <AIPerformanceAnalytics />;
 
+
       case 'threat-intel-live':
         console.log('🛡️ Rendering Threat Intelligence Dashboard');
         return <ThreatIntelligenceDashboard />;
+
 
       case 'ai-detection':
         console.log('🎯 Rendering AI Detection Dashboard');
         return <AIDetectionDashboard />;
 
+
       case 'siem-integration':
         console.log('🔗 Rendering SIEM Integration Dashboard');
         return <SIEMIntegrationDashboard />;
+
 
       case 'predictive-analytics':
         console.log('🔮 Rendering Predictive Analytics Dashboard');
         return <PredictiveAnalyticsDashboard />;
 
+
       case 'compliance-governance':
         console.log('📋 Rendering Compliance & Governance Dashboard');
         return <ComplianceDashboard />;
+
 
       case 'incident-response':
         console.log('🚨 Rendering Incident Response Dashboard');
         return <IncidentResponseDashboard />;
 
+
       case 'ai-reports':
         console.log('📊 Rendering AI Reports Dashboard');
-        return <AIReportsDashboard />;  // ← FIXED: was AIAssistant, now correct
+        return <AIReportsDashboard />;
+
 
       default:
         console.log('📊 Rendering Dashboard for feature:', activeFeature);
@@ -201,9 +225,11 @@ function AppContent() {
     }
   };
 
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Header onReset={handleReset} />
+
 
       <div className="flex h-[calc(100vh-64px)]">
         {/* Left Sidebar */}
@@ -215,6 +241,7 @@ function AppContent() {
           />
         </div>
 
+
         {/* Main Content + AI Assistant Container */}
         <div className="flex h-full flex-1">
           {/* Main Content Area */}
@@ -225,6 +252,7 @@ function AppContent() {
               <LandingScreen onAnalysisComplete={handleAnalysisComplete} />
             )}
           </div>
+
 
           {/* Right AI Assistant Panel */}
           <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
@@ -245,6 +273,7 @@ function AppContent() {
   );
 }
 
+
 function App() {
   return (
     <Router>
@@ -254,5 +283,6 @@ function App() {
     </Router>
   );
 }
+
 
 export default App;
