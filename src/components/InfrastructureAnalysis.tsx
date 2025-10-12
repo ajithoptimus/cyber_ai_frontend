@@ -1,8 +1,9 @@
+// src/components/InfrastructureAnalysis.tsx - COMPLETE WITH PDF DOWNLOAD
 import React, { useState } from 'react';
 import ScanResultsTable from './ScanResultsTable';
 import { exportToCSV, exportToJSON, exportToTXT } from '../utils/exportUtils';
 import FileResultsCard from './FileResultsCard';
-
+import { PDFDownloadButton } from './PDFDownloadButton';
 
 const InfrastructureAnalysis = () => {
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ const InfrastructureAnalysis = () => {
     
     const filesArray = Array.from(fileList);
     
-    setUploadedFile(filesArray[0]); // For display purposes
+    setUploadedFile(filesArray[0]);
     setScanning(true);
     setLoading(true);
     
@@ -202,7 +203,7 @@ const InfrastructureAnalysis = () => {
           </label>
         </div>
         
-        {/* Scan Completed Banner with Export Buttons */}
+        {/* Scan Completed Banner with Export & PDF Download Buttons */}
         {uploadedFile && !scanning && scanResults && (
           <div className="mt-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
             <div className="flex items-center justify-between">
@@ -218,13 +219,20 @@ const InfrastructureAnalysis = () => {
                 </div>
               </div>
               
-              {/* Export & Clear Buttons */}
+              {/* Export & PDF Download Buttons */}
               <div className="flex items-center space-x-2">
+                {/* PDF Download Button */}
+                <PDFDownloadButton 
+                  filename={`Cyber_AI_Audit_${uploadedFile.name.split('.')[0]}`}
+                  variant="primary"
+                  className="flex items-center space-x-2"
+                />
+                
                 {/* Export Dropdown */}
                 <div className="relative group">
-                  <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                  <button className="flex items-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
                     <span>📥</span>
-                    <span>Export</span>
+                    <span>Export Data</span>
                     <span>▼</span>
                   </button>
                   
@@ -270,7 +278,7 @@ const InfrastructureAnalysis = () => {
                       info: 0
                     });
                   }}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors px-3 py-2"
                 >
                   Clear Results
                 </button>
@@ -356,19 +364,16 @@ const InfrastructureAnalysis = () => {
         </div>
       )}
 
-
       {/* File-by-File Results - Only for Batch Scans */}
       {scanResults?.scan_type === 'batch' && scanResults?.file_results && (
         <FileResultsCard 
           fileResults={scanResults.file_results}
           findings={findings}
           onFileSelect={(filename) => {
-            // Optional: Filter findings by selected file
             console.log('Selected file:', filename);
           }}
         />
       )}
-
 
       {/* Category Filter & View Mode Toggle */}
       {findings.length > 0 && (

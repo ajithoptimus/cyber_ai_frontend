@@ -1,4 +1,4 @@
-// src/services/riskScoreApi.ts
+// src/services/riskScoreApi.ts - COMPLETE WITH PDF DOWNLOAD
 import axios from 'axios';
 import type { RiskScoreData, CompoundRisk, Finding, ScanHistory, RiskTrend } from '../types/riskScore.types';
 
@@ -44,6 +44,41 @@ export const riskScoreApi = {
   // Get scan history
   getScanHistory: async (limit: number = 20): Promise<{ scan_history: ScanHistory[] }> => {
     const response = await axios.get(`${API_BASE_URL}/scan-history?limit=${limit}`);
+    return response.data;
+  },
+
+  // ========================================
+  // PDF REPORT DOWNLOAD
+  // ========================================
+  
+  // Download PDF report for latest scan
+  downloadPDFReport: async (scanId?: string): Promise<Blob> => {
+    const url = scanId 
+      ? `${API_BASE_URL}/generate-report-pdf/${scanId}`
+      : `${API_BASE_URL}/generate-report-pdf`;
+    
+    const response = await axios.post(url, {
+      filename: 'security_audit',
+      file_type: 'terraform'
+    }, {
+      responseType: 'blob', // Important: tells axios to expect binary data (PDF)
+      headers: {
+        'Accept': 'application/pdf'
+      }
+    });
+    
+    return response.data;
+  },
+
+  // Download PDF report by scan ID (alternative method)
+  downloadPDFReportByScanId: async (scanId: string): Promise<Blob> => {
+    const response = await axios.get(`${API_BASE_URL}/generate-report-pdf/${scanId}`, {
+      responseType: 'blob',
+      headers: {
+        'Accept': 'application/pdf'
+      }
+    });
+    
     return response.data;
   },
 };
