@@ -15,9 +15,8 @@ import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashbo
 import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
 import AIReportsDashboard from './components/AIReportsDashboard';
-import { RiskScoreDashboard } from './components/RiskScoreDashboard';
 
-
+// Types
 export interface AnalysisData {
   riskScore: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -31,7 +30,7 @@ export interface AnalysisData {
   lastUpdated: string;
 }
 
-
+// Main Content Component with Routing Logic
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,12 +38,7 @@ function AppContent() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
-
-  console.log('🔍 App.tsx - activeFeature:', activeFeature);
-  console.log('🌐 Current URL:', location.pathname);
-
-
-  // URL to feature mapping
+  // URL <-> Feature mapping
   const urlToFeatureMap: Record<string, string> = {
     '/': 'threat-intelligence',
     '/threat-intelligence': 'threat-intelligence',
@@ -67,8 +61,6 @@ function AppContent() {
     '/ai-reports': 'ai-reports'
   };
 
-
-  // Feature to URL mapping (reverse)
   const featureToUrlMap: Record<string, string> = {
     'threat-intelligence': '/threat-intelligence',
     'whois-lookup': '/whois-lookup',
@@ -90,23 +82,21 @@ function AppContent() {
     'ai-reports': '/ai-reports'
   };
 
-
-  // Sync activeFeature with URL on mount and URL change
+  // Sync activeFeature with URL change
   useEffect(() => {
     const feature = urlToFeatureMap[location.pathname];
     if (feature && feature !== activeFeature) {
-      console.log('📍 URL changed, setting feature:', feature);
       setActiveFeature(feature);
     }
   }, [location.pathname]);
 
-
+  // Analysis completion handler
   const handleAnalysisComplete = (data: AnalysisData) => {
     setAnalysisData(data);
     setHasAnalysis(true);
   };
 
-
+  // Reset handler
   const handleReset = () => {
     setHasAnalysis(false);
     setAnalysisData(null);
@@ -114,21 +104,16 @@ function AppContent() {
     navigate('/');
   };
 
-
-  // Handle feature selection from sidebar
+  // Sidebar feature selection
   const handleFeatureSelect = (feature: string) => {
-    console.log('🔘 Feature selected:', feature);
     setActiveFeature(feature);
-    
-    // Update URL
     const url = featureToUrlMap[feature] || '/';
     if (location.pathname !== url) {
       navigate(url);
     }
   };
 
-
-  // Always available features
+  // Always available features, controls sidebar/dashboard
   const alwaysAvailableFeatures = [
     'github-integration',
     'infrastructure-analysis',
@@ -149,66 +134,33 @@ function AppContent() {
     'file-analysis'
   ];
 
-
   const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
-
+  // Dynamically render active dashboard/component
   const renderActiveFeature = () => {
-    console.log('🎯 Rendering feature:', activeFeature);
-
-
     switch (activeFeature) {
       case 'infrastructure-analysis':
         return <InfrastructureAnalysis />;
-
-
       case 'smart-risk-analysis':
         return <SmartRiskDashboard />;
-
-
       case 'ai-performance':
-        console.log('🤖 Rendering AI Performance Analytics');
         return <AIPerformanceAnalytics />;
-
-
       case 'threat-intel-live':
-        console.log('🛡️ Rendering Threat Intelligence Dashboard');
         return <ThreatIntelligenceDashboard />;
-
-
       case 'ai-detection':
-        console.log('🎯 Rendering AI Detection Dashboard');
         return <AIDetectionDashboard />;
-
-
       case 'siem-integration':
-        console.log('🔗 Rendering SIEM Integration Dashboard');
         return <SIEMIntegrationDashboard />;
-
-
       case 'predictive-analytics':
-        console.log('🔮 Rendering Predictive Analytics Dashboard');
         return <PredictiveAnalyticsDashboard />;
-
-
       case 'compliance-governance':
-        console.log('📋 Rendering Compliance & Governance Dashboard');
         return <ComplianceDashboard />;
-
-
       case 'incident-response':
-        console.log('🚨 Rendering Incident Response Dashboard');
         return <IncidentResponseDashboard />;
-
-
       case 'ai-reports':
-        console.log('📊 Rendering AI Reports Dashboard');
         return <AIReportsDashboard />;
-
-
       default:
-        console.log('📊 Rendering Dashboard for feature:', activeFeature);
         return (
           <Dashboard
             activeFeature={activeFeature}
@@ -225,12 +177,10 @@ function AppContent() {
     }
   };
 
-
+  // Main layout
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Header onReset={handleReset} />
-
-
       <div className="flex h-[calc(100vh-64px)]">
         {/* Left Sidebar */}
         <div className="w-80 bg-gray-800 border-r border-gray-700">
@@ -240,9 +190,7 @@ function AppContent() {
             disabled={!hasAnalysis}
           />
         </div>
-
-
-        {/* Main Content + AI Assistant Container */}
+        {/* Main Content & AI Assistant */}
         <div className="flex h-full flex-1">
           {/* Main Content Area */}
           <div className="flex-1 p-6 overflow-y-auto">
@@ -252,11 +200,9 @@ function AppContent() {
               <LandingScreen onAnalysisComplete={handleAnalysisComplete} />
             )}
           </div>
-
-
           {/* Right AI Assistant Panel */}
           <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
-            <AIAssistant 
+            <AIAssistant
               disabled={!hasAnalysis && !isFeatureAlwaysAvailable}
               dashboardContext={{
                 riskScore: analysisData?.riskScore || 72,
@@ -273,7 +219,7 @@ function AppContent() {
   );
 }
 
-
+// App wrapper for Router
 function App() {
   return (
     <Router>
@@ -284,11 +230,4 @@ function App() {
   );
 }
 
-
 export default App;
-
-// app.tsx
-
-
-// start a development for automousing cyber.ai
-

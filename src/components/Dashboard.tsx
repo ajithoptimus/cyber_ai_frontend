@@ -8,6 +8,8 @@ import ThreatCheck from './ThreatCheck';
 import BreachCheck from './BreachCheck';
 import GitHubIntegration from './GitHubIntegration';
 import AIPerformanceAnalytics from './AIPerformanceAnalytics';
+import ScanResultsDisplay from './ScanResultsDisplay';
+
 
 interface BackendDashboardData {
   unified_risk_score: number;
@@ -40,6 +42,10 @@ interface AnalysisData {
     status: string;
     description: string;
   }>;
+  // Add these fields for compatibility with ScanResultsDisplay:
+  overall_risk_score?: number;
+  summary?: string;
+  prioritized_findings?: any[];
 }
 
 interface DashboardProps {
@@ -52,8 +58,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  console.log('🔍 Dashboard rendered with activeFeature:', activeFeature);
-
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -63,17 +67,14 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const backendResult = await response.json();
-        console.log('✅ Backend data received:', backendResult);
         setBackendData(backendResult);
         setError(null);
       } catch (error) {
-        console.error('❌ Failed to fetch dashboard data:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch data');
       } finally {
         setLoading(false);
       }
     };
-
     if (activeFeature === 'threat-intelligence') {
       fetchDashboardData();
       const interval = setInterval(fetchDashboardData, 300000);
@@ -126,7 +127,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   const RiskGauge = () => {
     const circumference = 2 * Math.PI * 60;
     const strokeDashoffset = circumference - (displayData.riskScore / 10) * circumference;
-
     return (
       <div className="relative flex items-center justify-center">
         <svg width="140" height="140" className="transform -rotate-90">
@@ -146,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   };
 
   // === FEATURE ROUTING ===
-  
+
   if (activeFeature === 'file-analysis') {
     return (
       <div className="space-y-6">
@@ -155,6 +155,12 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
           <p className="text-gray-400">Upload files for comprehensive security analysis</p>
         </div>
         <FileUpload />
+        {/* Show scan results if available */}
+        {data.prioritized_findings && data.prioritized_findings.length > 0 && (
+          <div className="mt-8">
+            <ScanResultsDisplay analysis={data as any} />
+          </div>
+        )}
       </div>
     );
   }
@@ -209,7 +215,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             {backendData ? ' (Live Data)' : ' (Demo Data)'}
           </p>
         </div>
-
         {/* Risk Score Gauge */}
         <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-700">
           <div className="flex items-center justify-between">
@@ -222,7 +227,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             <RiskGauge />
           </div>
         </div>
-
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
@@ -234,7 +238,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
               <Activity className="w-12 h-12 text-blue-400" />
             </div>
           </div>
-
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <div className="flex items-center justify-between">
               <div>
@@ -244,7 +247,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
               <AlertCircle className="w-12 h-12 text-red-400" />
             </div>
           </div>
-
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <div className="flex items-center justify-between">
               <div>
@@ -257,7 +259,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             </div>
           </div>
         </div>
-
         {/* Threat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {displayData.threats.map((threat, index) => (
@@ -277,7 +278,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             </div>
           ))}
         </div>
-
         {/* Error Display */}
         {error && (
           <div className="bg-red-900/20 border border-red-500 p-4 rounded-lg">
