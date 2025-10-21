@@ -10,7 +10,6 @@ import GitHubIntegration from './GitHubIntegration';
 import AIPerformanceAnalytics from './AIPerformanceAnalytics';
 import ScanResultsDisplay from './ScanResultsDisplay';
 
-
 interface BackendDashboardData {
   unified_risk_score: number;
   risk_level: string;
@@ -42,7 +41,6 @@ interface AnalysisData {
     status: string;
     description: string;
   }>;
-  // Add these fields for compatibility with ScanResultsDisplay:
   overall_risk_score?: number;
   summary?: string;
   prioritized_findings?: any[];
@@ -146,8 +144,34 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   };
 
   // === FEATURE ROUTING ===
-
+  
   if (activeFeature === 'file-analysis') {
+    // Demo/test object if real findings array missing or empty
+    const demoAnalysis = {
+      overall_risk_score: 7.5,
+      summary: "Demo scan complete. Critical finding requires attention.",
+      prioritized_findings: [
+        {
+          title: "Hardcoded Secret Token",
+          severity: "CRITICAL",
+          file: "src/config.js",
+          line: 45,
+          description: "A secret token is committed in code.",
+          solution_summary: "Move it to ENV and revoke the token.",
+          suggested_fix: {
+            type: "REPLACE_LINE",
+            file: "src/config.js",
+            start_line: 45,
+            end_line: 45,
+            new_content: "const TOKEN = process.env.TOKEN;"
+          }
+        }
+      ]
+    };
+
+    const showScan =
+      data.prioritized_findings && Array.isArray(data.prioritized_findings) && data.prioritized_findings.length > 0;
+
     return (
       <div className="space-y-6">
         <div className="mb-8">
@@ -155,12 +179,11 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
           <p className="text-gray-400">Upload files for comprehensive security analysis</p>
         </div>
         <FileUpload />
-        {/* Show scan results if available */}
-        {data.prioritized_findings && data.prioritized_findings.length > 0 && (
-          <div className="mt-8">
-            <ScanResultsDisplay analysis={data as any} />
-          </div>
-        )}
+        <div className="mt-8">
+          {/* This now always shows the ScanResultsDisplay,
+              using demoAnalysis if there is no real data */}
+          <ScanResultsDisplay analysis={showScan ? data : demoAnalysis} />
+        </div>
       </div>
     );
   }
@@ -168,31 +191,24 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   if (activeFeature === 'github-integration') {
     return <GitHubIntegration />;
   }
-
   if (activeFeature === 'whois-lookup') {
     return <WhoisLookup />;
   }
-
   if (activeFeature === 'dns-records') {
     return <DNSLookup />;
   }
-
   if (activeFeature === 'ip-lookup') {
     return <IPLookup />;
   }
-
   if (activeFeature === 'threat-check') {
     return <ThreatCheck />;
   }
-
   if (activeFeature === 'breach-check') {
     return <BreachCheck />;
   }
-
   if (activeFeature === 'ai-performance') {
     return <AIPerformanceAnalytics />;
   }
-
   if (activeFeature === 'ai-reports') {
     return (
       <div className="bg-gray-800 p-6 rounded-lg">
@@ -215,7 +231,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             {backendData ? ' (Live Data)' : ' (Demo Data)'}
           </p>
         </div>
-        {/* Risk Score Gauge */}
         <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
@@ -227,7 +242,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             <RiskGauge />
           </div>
         </div>
-        {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <div className="flex items-center justify-between">
@@ -259,7 +273,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             </div>
           </div>
         </div>
-        {/* Threat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {displayData.threats.map((threat, index) => (
             <div key={index} className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors">
@@ -278,7 +291,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
             </div>
           ))}
         </div>
-        {/* Error Display */}
         {error && (
           <div className="bg-red-900/20 border border-red-500 p-4 rounded-lg">
             <p className="text-red-400">Error loading data: {error}</p>
@@ -288,7 +300,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
     );
   }
 
-  // Fallback
   return (
     <div className="bg-gray-800 p-6 rounded-lg">
       <h1 className="text-3xl font-bold text-white mb-4 capitalize">{activeFeature.replace(/-/g, ' ')}</h1>

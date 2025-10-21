@@ -48,9 +48,11 @@ const getScoreColor = (score: number) => {
   return 'text-green-400';
 };
 
-export const ScanResultsDisplay: React.FC<ScanResultsDisplayProps> = ({ analysis }) => {
+const ScanResultsDisplay: React.FC<ScanResultsDisplayProps> = ({ analysis }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const findings = analysis?.prioritized_findings || [];
 
   const handleCopy = async (content: string, idx: number) => {
     try {
@@ -64,18 +66,24 @@ export const ScanResultsDisplay: React.FC<ScanResultsDisplayProps> = ({ analysis
     <div className="bg-gray-900 min-h-screen w-full p-6 text-gray-100 overflow-y-auto">
       {/* Summary Card */}
       <div className="flex items-center gap-6 bg-gray-800 rounded-lg border border-gray-700 shadow mb-8 p-6">
-        <div className={`text-5xl font-extrabold ${getScoreColor(analysis.overall_risk_score)}`}>
-          {analysis.overall_risk_score.toFixed(1)}
+        <div className={`text-5xl font-extrabold ${getScoreColor(analysis?.overall_risk_score ?? 0)}`}>
+          {typeof analysis?.overall_risk_score === 'number'
+            ? analysis.overall_risk_score.toFixed(1)
+            : '--'}
         </div>
         <div className="flex-1">
           <div className="text-lg font-semibold mb-1">Scan Summary</div>
-          <div className="text-gray-300">{analysis.summary}</div>
+          <div className="text-gray-300">{analysis?.summary || "No summary available."}</div>
         </div>
       </div>
 
       {/* Findings List */}
       <div className="space-y-5">
-        {analysis.prioritized_findings.map((finding, idx) => (
+        {findings.length === 0 ? (
+          <div className="bg-gray-800 p-8 rounded-lg text-center text-gray-400 border border-gray-700">
+            No prioritized findings were detected in this analysis.
+          </div>
+        ) : findings.map((finding, idx) => (
           <div
             key={idx}
             className="bg-gray-800 border rounded-lg border-gray-700 shadow"
@@ -112,7 +120,7 @@ export const ScanResultsDisplay: React.FC<ScanResultsDisplayProps> = ({ analysis
                   <span className="font-mono bg-gray-900/40 px-2 py-1 rounded">
                     {finding.file}
                   </span>
-                  {finding.line !== null && (
+                  {finding.line !== null && finding.line !== undefined && (
                     <span className="font-mono bg-gray-900/40 px-2 py-1 rounded">
                       Line {finding.line}
                     </span>

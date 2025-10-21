@@ -15,8 +15,8 @@ import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashbo
 import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
 import AIReportsDashboard from './components/AIReportsDashboard';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 
-// Types
 export interface AnalysisData {
   riskScore: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -28,9 +28,12 @@ export interface AnalysisData {
     description: string;
   }>;
   lastUpdated: string;
+  overall_risk_score?: number;
+  summary?: string;
+  prioritized_findings?: any[];
 }
 
-// Main Content Component with Routing Logic
+// AppContent for your main app (always visible, handles sidebar logic)
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,7 +41,6 @@ function AppContent() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
-  // URL <-> Feature mapping
   const urlToFeatureMap: Record<string, string> = {
     '/': 'threat-intelligence',
     '/threat-intelligence': 'threat-intelligence',
@@ -82,7 +84,6 @@ function AppContent() {
     'ai-reports': '/ai-reports'
   };
 
-  // Sync activeFeature with URL change
   useEffect(() => {
     const feature = urlToFeatureMap[location.pathname];
     if (feature && feature !== activeFeature) {
@@ -90,13 +91,11 @@ function AppContent() {
     }
   }, [location.pathname]);
 
-  // Analysis completion handler
   const handleAnalysisComplete = (data: AnalysisData) => {
     setAnalysisData(data);
     setHasAnalysis(true);
   };
 
-  // Reset handler
   const handleReset = () => {
     setHasAnalysis(false);
     setAnalysisData(null);
@@ -104,7 +103,6 @@ function AppContent() {
     navigate('/');
   };
 
-  // Sidebar feature selection
   const handleFeatureSelect = (feature: string) => {
     setActiveFeature(feature);
     const url = featureToUrlMap[feature] || '/';
@@ -113,7 +111,6 @@ function AppContent() {
     }
   };
 
-  // Always available features, controls sidebar/dashboard
   const alwaysAvailableFeatures = [
     'github-integration',
     'infrastructure-analysis',
@@ -137,7 +134,29 @@ function AppContent() {
   const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
-  // Dynamically render active dashboard/component
+  // Demo scan results fallback for "file-analysis"
+  const demoScanAnalysis = {
+    overall_risk_score: 7.2,
+    summary: "Test Scan: critical vulnerability found in config.js (demo mode)",
+    prioritized_findings: [
+      {
+        title: "Hardcoded Password",
+        severity: "CRITICAL",
+        file: "config.js",
+        line: 11,
+        description: "Password found directly in code.",
+        solution_summary: "Use environment variable.",
+        suggested_fix: {
+          type: "REPLACE_LINE",
+          file: "config.js",
+          start_line: 11,
+          end_line: 11,
+          new_content: "const password = process.env.DB_PASSWORD;"
+        }
+      }
+    ]
+  };
+
   const renderActiveFeature = () => {
     switch (activeFeature) {
       case 'infrastructure-analysis':
@@ -160,6 +179,17 @@ function AppContent() {
         return <IncidentResponseDashboard />;
       case 'ai-reports':
         return <AIReportsDashboard />;
+      case 'file-analysis': 
+        const scanData =
+          analysisData && analysisData.prioritized_findings && analysisData.prioritized_findings.length > 0
+            ? analysisData
+            : demoScanAnalysis;
+        return (
+          <Dashboard
+            activeFeature={activeFeature}
+            data={scanData}
+          />
+        );
       default:
         return (
           <Dashboard
@@ -177,12 +207,10 @@ function AppContent() {
     }
   };
 
-  // Main layout
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <Header onReset={handleReset} />
       <div className="flex h-[calc(100vh-64px)]">
-        {/* Left Sidebar */}
         <div className="w-80 bg-gray-800 border-r border-gray-700">
           <Sidebar
             activeFeature={activeFeature}
@@ -190,9 +218,7 @@ function AppContent() {
             disabled={!hasAnalysis}
           />
         </div>
-        {/* Main Content & AI Assistant */}
         <div className="flex h-full flex-1">
-          {/* Main Content Area */}
           <div className="flex-1 p-6 overflow-y-auto">
             {shouldShowDashboard ? (
               renderActiveFeature()
@@ -200,7 +226,6 @@ function AppContent() {
               <LandingScreen onAnalysisComplete={handleAnalysisComplete} />
             )}
           </div>
-          {/* Right AI Assistant Panel */}
           <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
             <AIAssistant
               disabled={!hasAnalysis && !isFeatureAlwaysAvailable}
@@ -219,11 +244,11 @@ function AppContent() {
   );
 }
 
-// App wrapper for Router
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/*" element={<AppContent />} />
       </Routes>
     </Router>

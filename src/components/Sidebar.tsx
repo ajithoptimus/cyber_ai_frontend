@@ -1,24 +1,8 @@
 import React from 'react';
 import { 
-  Shield, 
-  Search, 
-  Globe, 
-  Server, 
-  MapPin, 
-  AlertTriangle, 
-  Database, 
-  FileText,
-  Activity,
-  GitBranch,
-  Building2,
-  Brain,
-  Zap,
-  Target,
-  Link,
-  TrendingUp,
-  CheckCircle,
-  Siren,
-  Sparkles  // ← ADD THIS for better AI Reports icon
+  Shield, Search, Globe, Server, MapPin, AlertTriangle, Database,
+  FileText, Activity, GitBranch, Building2, Brain, Zap, Target,
+  Link, TrendingUp, CheckCircle, Siren, Sparkles
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +12,9 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disabled = false }) => {
+
+  const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
+
   const tools = [
     { id: 'threat-intelligence', name: 'Threat Intelligence', icon: Shield, color: 'text-blue-400' },
     { id: 'whois-lookup', name: 'WHOIS Lookup', icon: Globe, color: 'text-purple-400' },
@@ -46,146 +33,155 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
     { id: 'ai-performance', name: 'AI Performance', icon: Brain, color: 'text-pink-400' },
     { id: 'compliance-governance', name: 'Compliance & Governance', icon: CheckCircle, color: 'text-indigo-400' },
     { id: 'incident-response', name: 'Incident Response', icon: Siren, color: 'text-red-400' },
-    { id: 'ai-reports', name: 'AI Reports', icon: Sparkles, color: 'text-pink-400' },  // ← Changed icon to Sparkles
+    { id: 'ai-reports', name: 'AI Reports', icon: Sparkles, color: 'text-pink-400' },
   ];
 
   return (
-    <div className="p-6 h-full overflow-y-auto">
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-300 mb-4">ANALYSIS TOOLS</h2>
-        <div className="space-y-1 text-xs text-gray-500">
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
-            DevSecOps Pipeline: Active
-          </div>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></div>
-            IaC & IAM Scanners: Online
-          </div>
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
-            AI Risk Analysis: Active
+    <div className="p-6 h-full flex flex-col justify-between overflow-y-auto">
+      <div>
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-300 mb-4">ANALYSIS TOOLS</h2>
+          <div className="space-y-1 text-xs text-gray-500">
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+              DevSecOps Pipeline: Active
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full mr-2 animate-pulse"></div>
+              IaC & IAM Scanners: Online
+            </div>
+            <div className="flex items-center">
+              <div className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
+              AI Risk Analysis: Active
+            </div>
           </div>
         </div>
+
+        <nav className="space-y-2">
+          {tools.map((tool) => {
+            const Icon = tool.icon;
+            const isActive = activeFeature === tool.id;
+            const isAlwaysAvailable = [
+              'github-integration', 'infrastructure-analysis', 'smart-risk-analysis', 'ai-performance',
+              'threat-intel-live', 'ai-detection', 'siem-integration', 'predictive-analytics',
+              'compliance-governance', 'incident-response', 'ai-reports', 'whois-lookup', 'dns-records',
+              'ip-lookup', 'threat-check', 'breach-check', 'file-analysis'
+            ].includes(tool.id);
+
+            const isDisabled = disabled && !isAlwaysAvailable;
+
+            return (
+              <button
+                key={tool.id}
+                onClick={() => !isDisabled && onFeatureSelect(tool.id)}
+                disabled={isDisabled}
+                className={`w-full flex items-center px-4 py-3 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-blue-600/20 border border-blue-500/30 text-white'
+                    : isDisabled
+                    ? 'text-gray-600 cursor-not-allowed'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                }`}
+              >
+                <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-400' : tool.color}`} />
+                <span className="font-medium text-sm">{tool.name}</span>
+                {/* Status badges */}
+                {tool.id === 'github-integration' && (
+                  <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">LIVE</span>
+                )}
+                {tool.id === 'infrastructure-analysis' && (
+                  <span className="ml-auto text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">
+                    6 SCANNERS
+                  </span>
+                )}
+                {tool.id === 'smart-risk-analysis' && (
+                  <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
+                    AI
+                  </span>
+                )}
+                {tool.id === 'ai-detection' && (
+                  <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
+                    6A
+                  </span>
+                )}
+                {tool.id === 'siem-integration' && (
+                  <span className="ml-auto text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                    6B
+                  </span>
+                )}
+                {tool.id === 'predictive-analytics' && (
+                  <span className="ml-auto text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                    6C
+                  </span>
+                )}
+                {tool.id === 'threat-intel-live' && (
+                  <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full animate-pulse">
+                    6D
+                  </span>
+                )}
+                {tool.id === 'ai-performance' && (
+                  <span className="ml-auto text-xs bg-pink-500/20 text-pink-400 px-2 py-1 rounded-full">
+                    6E
+                  </span>
+                )}
+                {tool.id === 'compliance-governance' && (
+                  <span className="ml-auto text-xs bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full">
+                    7
+                  </span>
+                )}
+                {tool.id === 'incident-response' && (
+                  <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">
+                    8
+                  </span>
+                )}
+                {tool.id === 'ai-reports' && (
+                  <span className="ml-auto text-xs bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-400 px-2 py-1 rounded-full">
+                    AI
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {disabled && (
+          <div className="mt-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
+            <p className="text-sm text-gray-400 text-center mb-3">
+              Advanced Features Available Anytime
+            </p>
+            <div className="text-xs text-gray-500 text-center space-y-1">
+              <div>🎯 AI Detection • 🔗 SIEM • 🔮 Predictive</div>
+              <div>⚡ Live Threats • 📊 Performance</div>
+              <div>✅ Compliance • 🚨 Incident Response</div>
+              <div>✨ AI Reports • 🔍 All Analysis Tools</div>
+            </div>
+          </div>
+        )}
       </div>
 
-      <nav className="space-y-2">
-        {tools.map((tool) => {
-          const Icon = tool.icon;
-          const isActive = activeFeature === tool.id;
-          const isAlwaysAvailable = [
-            'github-integration', 
-            'infrastructure-analysis', 
-            'smart-risk-analysis', 
-            'ai-performance',
-            'threat-intel-live',
-            'ai-detection',
-            'siem-integration',
-            'predictive-analytics',
-            'compliance-governance',
-            'incident-response',
-            'ai-reports',  // ← ADD THIS LINE - THIS IS THE FIX!
-            'whois-lookup',
-            'dns-records',
-            'ip-lookup',
-            'threat-check',
-            'breach-check',
-            'file-analysis'
-          ].includes(tool.id);
-
-          const isDisabled = disabled && !isAlwaysAvailable;
-
-          return (
-            <button
-              key={tool.id}
-              onClick={() => !isDisabled && onFeatureSelect(tool.id)}
-              disabled={isDisabled}
-              className={`w-full flex items-center px-4 py-3 rounded-lg transition-all ${
-                isActive
-                  ? 'bg-blue-600/20 border border-blue-500/30 text-white'
-                  : isDisabled
-                  ? 'text-gray-600 cursor-not-allowed'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-400' : tool.color}`} />
-              <span className="font-medium text-sm">{tool.name}</span>
-
-              {/* Status badges */}
-              {tool.id === 'github-integration' && (
-                <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-                  LIVE
-                </span>
-              )}
-              {tool.id === 'infrastructure-analysis' && (
-                <span className="ml-auto text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">
-                  6 SCANNERS
-                </span>
-              )}
-              {tool.id === 'smart-risk-analysis' && (
-                <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-                  AI
-                </span>
-              )}
-              {tool.id === 'ai-detection' && (
-                <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-                  6A
-                </span>
-              )}
-              {tool.id === 'siem-integration' && (
-                <span className="ml-auto text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
-                  6B
-                </span>
-              )}
-              {tool.id === 'predictive-analytics' && (
-                <span className="ml-auto text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
-                  6C
-                </span>
-              )}
-              {tool.id === 'threat-intel-live' && (
-                <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full animate-pulse">
-                  6D
-                </span>
-              )}
-              {tool.id === 'ai-performance' && (
-                <span className="ml-auto text-xs bg-pink-500/20 text-pink-400 px-2 py-1 rounded-full">
-                  6E
-                </span>
-              )}
-              {tool.id === 'compliance-governance' && (
-                <span className="ml-auto text-xs bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full">
-                  7
-                </span>
-              )}
-              {tool.id === 'incident-response' && (
-                <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">
-                  8
-                </span>
-              )}
-              {/* ADD AI REPORTS BADGE */}
-              {tool.id === 'ai-reports' && (
-                <span className="ml-auto text-xs bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-400 px-2 py-1 rounded-full">
-                  AI
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
-
-      {disabled && (
-        <div className="mt-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
-          <p className="text-sm text-gray-400 text-center mb-3">
-            Advanced Features Available Anytime
-          </p>
-          <div className="text-xs text-gray-500 text-center space-y-1">
-            <div>🎯 AI Detection • 🔗 SIEM • 🔮 Predictive</div>
-            <div>⚡ Live Threats • 📊 Performance</div>
-            <div>✅ Compliance • 🚨 Incident Response</div>
-            <div>✨ AI Reports • 🔍 All Analysis Tools</div>
-          </div>
-        </div>
-      )}
+      {/* Auth section at the bottom */}
+      <div className="mt-10">
+        {!isAuthenticated ? (
+          <button
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg mt-2"
+            onClick={() =>
+              (window.location.href = 'http://localhost:8000/api/v1/auth/login/github')
+            }
+          >
+            Sign in with GitHub
+          </button>
+        ) : (
+          <button
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg mt-2"
+            onClick={() => {
+              localStorage.removeItem('accessToken');
+              window.location.href = '/';
+            }}
+          >
+            Logout
+          </button>
+        )}
+      </div>
     </div>
   );
 };
