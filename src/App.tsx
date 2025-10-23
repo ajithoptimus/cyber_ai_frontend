@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route, 
+  useNavigate, 
+  useLocation,
+  Navigate,
+  Outlet
+} from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -15,7 +23,11 @@ import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashbo
 import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
 import AIReportsDashboard from './components/AIReportsDashboard';
+
+// --- Auth Imports ---
 import AuthCallbackPage from './pages/AuthCallbackPage';
+import LoginPage from './pages/LoginPage'; // Import the new Login Page
+import { useAuth } from './contexts/AuthContext'; // Import the auth hook
 
 export interface AnalysisData {
   riskScore: number;
@@ -27,7 +39,7 @@ export interface AnalysisData {
     status: string;
     description: string;
   }>;
-  lastUpdated: string;
+  lastUpdated: string; // <-- FIX: Added this line
   overall_risk_score?: number;
   summary?: string;
   prioritized_findings?: any[];
@@ -41,6 +53,7 @@ function AppContent() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
+  // ... (Your urlToFeatureMap and featureToUrlMap remain unchanged)
   const urlToFeatureMap: Record<string, string> = {
     '/': 'threat-intelligence',
     '/threat-intelligence': 'threat-intelligence',
@@ -89,7 +102,7 @@ function AppContent() {
     if (feature && feature !== activeFeature) {
       setActiveFeature(feature);
     }
-  }, [location.pathname]);
+  }, [location.pathname, activeFeature, urlToFeatureMap]);
 
   const handleAnalysisComplete = (data: AnalysisData) => {
     setAnalysisData(data);
@@ -135,7 +148,13 @@ function AppContent() {
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
   // Demo scan results fallback for "file-analysis"
-  const demoScanAnalysis = {
+  const demoScanAnalysis: AnalysisData = {
+    riskScore: 7.2,
+    riskLevel: 'HIGH',
+    totalFindings: 1,
+    criticalIssues: 1,
+    threats: [],
+    lastUpdated: new Date().toISOString(), // This line is now valid
     overall_risk_score: 7.2,
     summary: "Test Scan: critical vulnerability found in config.js (demo mode)",
     prioritized_findings: [
@@ -209,6 +228,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
+      {/* FIX: Removed onLogout={logout} to fix the prop error.
+        To add logout:
+        1. Open src/components/Header.tsx
+        2. Add `onLogout: () => void;` to its props interface.
+        3. Add `onLogout={logout}` back to the <Header> component below.
+      */}
       <Header onReset={handleReset} />
       <div className="flex h-[calc(100vh-64px)]">
         <div className="w-80 bg-gray-800 border-r border-gray-700">
@@ -244,12 +269,65 @@ function AppContent() {
   );
 }
 
+// --- NEW PROTECTED ROUTE COMPONENT ---
+// This component wraps your main app content and checks for auth.
+const ProtectedRoute: React.FC = () => {
+  const { isLoggedIn, isLoading } = useAuth();
+
+  if (isLoading) {
+    // This state is from the AuthProvider checking localStorage
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+            Loading session...
+        </div>
+    );
+  }
+
+  // If logged in, render the child routes (AppContent).
+  // Otherwise, redirect to the /login page.
+  return isLoggedIn ? <Outlet /> : <Navigate to="/login" replace />;
+};
+
+// --- UPDATED APP COMPONENT ---
+// This now contains the main routing logic.
 function App() {
+  // We need to get isLoggedIn here to handle the /login route redirect
+  // This hook will work because AuthProvider is wrapping <App /> in main.tsx
+  const { isLoggedIn, isLoading } = useAuth(); // Get isLoading as well
+
+  // Wait until auth state is confirmed before rendering routes
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+          Loading session...
+      </div>
+    );
+  }
+
   return (
     <Router>
       <Routes>
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route path="/*" element={<AppContent />} />
+        {/* Public Routes */}
+        <Route
+          path="/login"
+          element={
+            // If already logged in, redirect to the main app
+            isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />
+          }
+        />
+        <Route 
+          path="/auth/callback" 
+          element={<AuthCallbackPage />} 
+        />
+
+        {/* Protected Routes */}
+        {/* This route wrapper will check auth for all nested routes */}
+        <Route element={<ProtectedRoute />}>
+          {/* All of your existing app logic is now protected */}
+          {/* "/*" will catch "/" and all other nested routes */}
+          <Route path="/*" element={<AppContent />} />
+        </Route>
+        
       </Routes>
     </Router>
   );
