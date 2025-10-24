@@ -39,7 +39,7 @@ export interface AnalysisData {
     status: string;
     description: string;
   }>;
-  lastUpdated: string; // <-- FIX: Added this line
+  lastUpdated: string; // Keep this fix
   overall_risk_score?: number;
   summary?: string;
   prioritized_findings?: any[];
@@ -49,6 +49,7 @@ export interface AnalysisData {
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth(); // Get logout function from context
   const [hasAnalysis, setHasAnalysis] = useState(false);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
@@ -228,13 +229,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* FIX: Removed onLogout={logout} to fix the prop error.
-        To add logout:
+      {/* NOTE: To make the logout button in your Header work:
         1. Open src/components/Header.tsx
         2. Add `onLogout: () => void;` to its props interface.
         3. Add `onLogout={logout}` back to the <Header> component below.
       */}
-      <Header onReset={handleReset} />
+      <Header onReset={handleReset} /* onLogout={logout} */ />
       <div className="flex h-[calc(100vh-64px)]">
         <div className="w-80 bg-gray-800 border-r border-gray-700">
           <Sidebar
@@ -250,6 +250,7 @@ function AppContent() {
             ) : (
               <LandingScreen onAnalysisComplete={handleAnalysisComplete} />
             )}
+            {/* FIX: The extra '}' was removed from here */}
           </div>
           <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
             <AIAssistant
@@ -334,3 +335,4 @@ function App() {
 }
 
 export default App;
+

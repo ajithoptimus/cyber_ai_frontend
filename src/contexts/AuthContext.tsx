@@ -3,24 +3,23 @@ import React, {
   useState,
   useContext,
   useEffect,
-  type ReactNode // Fix: 'type' keyword added
+  type ReactNode
 } from 'react';
 
 interface AuthContextType {
   token: string | null;
   isLoggedIn: boolean;
   /**
-   * Exchanges a GitHub auth code for a JWT token by calling the backend.
+   * Sets the new token in state and localStorage.
    */
-  login: (code: string) => Promise<void>;
+  login: (newToken: string) => void;
   /**
-   * Logs the user out by clearing the token from state and localStorage.
+   * Logs the user out.
    */
   logout: () => void;
-  isLoading: boolean; // For checking token on initial load
+  isLoading: boolean;
 }
 
-// Create the context with a default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
@@ -29,7 +28,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start loading
+  const [isLoading, setIsLoading] = useState(true);
 
   // Check localStorage for token on initial load
   useEffect(() => {
@@ -40,55 +39,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false); // Finished checking
   }, []);
 
-  // Internal function to set token in state and storage
-  const setTokenInStateAndStorage = (newToken: string) => {
+  // --- THIS IS THE UPDATED FUNCTION ---
+  // It's now very simple. It just sets the token.
+  const login = (newToken: string) => {
     localStorage.setItem('accessToken', newToken);
     setToken(newToken);
-  };
-
-  // --- NEW LOGIN FUNCTION ---
-  // This function is called from the AuthCallbackPage.
-  // It takes the code, sends it to the backend, gets a token,
-  // and then sets the token in state/storage.
-  const login = async (code: string) => {
-    try {
-      // Call your backend callback endpoint
-      const response = await fetch('/api/v1/auth/github/callback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'GitHub login failed');
-      }
-
-      // Assuming your backend returns { token: "your_jwt_token" }
-      const data = await response.json();
-      
-      if (!data.token) {
-         throw new Error('No token received from server');
-      }
-      
-      setTokenInStateAndStorage(data.token);
-      
-    } catch (error) {
-      console.error('Failed to login:', error);
-      // Clear any partial state just in case
-      logout(); 
-      // Re-throw error so the calling component (AuthCallbackPage) can handle it
-      throw error;
-    }
   };
 
   const logout = () => {
     localStorage.removeItem('accessToken');
     setToken(null);
     // Redirect to login page to prevent being stuck on a protected route
-    // Using window.location.href ensures a full refresh and state clear
     window.location.href = '/login';
   };
 
@@ -96,11 +57,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Don't render children until we've checked for the token
   if (isLoading) {
-    // You can replace this with a proper loading spinner component
+    // This will now be styled because of Step 1
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-            Loading session...
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+        Loading session...
+      </div>
     );
   }
 
