@@ -6,15 +6,30 @@ import React, {
   type ReactNode
 } from 'react';
 
+interface User {
+  id: string;
+  email: string;
+  username?: string;
+}
+
 interface AuthContextType {
+  user: User | null;
   token: string | null;
   isLoggedIn: boolean;
   /**
-   * Sets the new token in state and localStorage.
+   * Login with email and password
    */
-  login: (newToken: string) => void;
+  login: (email: string, password: string) => Promise<void>;
   /**
-   * Logs the user out.
+   * Signup with email, password, and optional username
+   */
+  signup: (email: string, password: string, username?: string) => Promise<void>;
+  /**
+   * Manual login - sets token directly (for OAuth callback)
+   */
+  setAuthToken: (newToken: string) => void;
+  /**
+   * Logs the user out
    */
   logout: () => void;
   isLoading: boolean;
@@ -28,36 +43,122 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const API_URL = 'http://localhost:8000/api/v1';
+
+  // Decode JWT to get user info
+  const decodeToken = (token: string): User | null => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        id: payload.sub,
+        email: payload.email,
+        username: payload.username
+      };
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+      return null;
+    }
+  };
 
   // Check localStorage for token on initial load
   useEffect(() => {
     const storedToken = localStorage.getItem('accessToken');
     if (storedToken) {
       setToken(storedToken);
+      const userData = decodeToken(storedToken);
+      setUser(userData);
     }
-    setIsLoading(false); // Finished checking
+    setIsLoading(false);
   }, []);
 
-  // --- THIS IS THE UPDATED FUNCTION ---
-  // It's now very simple. It just sets the token.
-  const login = (newToken: string) => {
-    localStorage.setItem('accessToken', newToken);
-    setToken(newToken);
+  /**
+   * Email/Password Signup
+   */
+  const signup = async (email: string, password: string, username?: string) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, username })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Signup failed');
+      }
+
+      const data = await response.json();
+      const newToken = data.access_token;
+      
+      localStorage.setItem('accessToken', newToken);
+      setToken(newToken);
+      
+      const userData = decodeToken(newToken);
+      setUser(userData);
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
   };
 
+  /**
+   * Email/Password Login
+   */
+  const login = async (email: string, password: string) => {
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Login failed');
+      }
+
+      const data = await response.json();
+      const newToken = data.access_token;
+      
+      localStorage.setItem('accessToken', newToken);
+      setToken(newToken);
+      
+      const userData = decodeToken(newToken);
+      setUser(userData);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Manual token setter (for OAuth callback)
+   */
+  const setAuthToken = (newToken: string) => {
+    localStorage.setItem('accessToken', newToken);
+    setToken(newToken);
+    
+    const userData = decodeToken(newToken);
+    setUser(userData);
+  };
+
+  /**
+   * Logout
+   */
   const logout = () => {
     localStorage.removeItem('accessToken');
     setToken(null);
-    // Redirect to login page to prevent being stuck on a protected route
+    setUser(null);
     window.location.href = '/login';
   };
 
   const isLoggedIn = !!token;
 
-  // Don't render children until we've checked for the token
+  // Loading screen
   if (isLoading) {
-    // This will now be styled because of Step 1
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
         Loading session...
@@ -66,13 +167,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ token, isLoggedIn, login, logout, isLoading }}>
+    <AuthContext.Provider 
+      value={{ 
+        user,
+        token, 
+        isLoggedIn, 
+        login, 
+        signup,
+        setAuthToken, 
+        logout, 
+        isLoading 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use the auth context easily
+// Custom hook to use the auth context
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {

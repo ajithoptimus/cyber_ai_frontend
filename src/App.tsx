@@ -5,8 +5,7 @@ import {
   Route, 
   useNavigate, 
   useLocation,
-  Navigate,
-  Outlet
+  Navigate
 } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -24,10 +23,12 @@ import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
 import AIReportsDashboard from './components/AIReportsDashboard';
 
-// --- Auth Imports ---
+// Auth Imports
 import AuthCallbackPage from './pages/AuthCallbackPage';
-import LoginPage from './pages/LoginPage'; // Import the new Login Page
-import { useAuth } from './contexts/AuthContext'; // Import the auth hook
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import WelcomePage from './pages/WelcomePage'; // NEW: Import welcome page
+import { useAuth } from './contexts/AuthContext';
 
 export interface AnalysisData {
   riskScore: number;
@@ -39,24 +40,48 @@ export interface AnalysisData {
     status: string;
     description: string;
   }>;
-  lastUpdated: string; // Keep this fix
+  lastUpdated: string;
   overall_risk_score?: number;
   summary?: string;
   prioritized_findings?: any[];
 }
 
-// AppContent for your main app (always visible, handles sidebar logic)
+// Public features (no login required)
+const PUBLIC_FEATURES = [
+  'threat-intelligence',
+  'whois-lookup',
+  'dns-records',
+  'ip-lookup',
+  'threat-check'
+];
+
+// Premium features (login required)
+const PREMIUM_FEATURES = [
+  'github-integration',
+  'breach-check',
+  'file-analysis',
+  'infrastructure-analysis',
+  'smart-risk-analysis',
+  'ai-detection',
+  'siem-integration',
+  'predictive-analytics',
+  'threat-intel-live',
+  'ai-performance',
+  'compliance-governance',
+  'incident-response',
+  'ai-reports'
+];
+
+// AppContent for your main app (dashboard with sidebar)
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth(); // Get logout function from context
+  const { logout, isLoggedIn } = useAuth();
   const [hasAnalysis, setHasAnalysis] = useState(false);
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
-  // ... (Your urlToFeatureMap and featureToUrlMap remain unchanged)
   const urlToFeatureMap: Record<string, string> = {
-    '/': 'threat-intelligence',
     '/threat-intelligence': 'threat-intelligence',
     '/whois-lookup': 'whois-lookup',
     '/dns-records': 'dns-records',
@@ -114,48 +139,33 @@ function AppContent() {
     setHasAnalysis(false);
     setAnalysisData(null);
     setActiveFeature('threat-intelligence');
-    navigate('/');
+    navigate('/threat-intelligence');
   };
 
   const handleFeatureSelect = (feature: string) => {
+    if (PREMIUM_FEATURES.includes(feature) && !isLoggedIn) {
+      navigate('/login');
+      return;
+    }
+
     setActiveFeature(feature);
-    const url = featureToUrlMap[feature] || '/';
+    const url = featureToUrlMap[feature] || '/threat-intelligence';
     if (location.pathname !== url) {
       navigate(url);
     }
   };
 
-  const alwaysAvailableFeatures = [
-    'github-integration',
-    'infrastructure-analysis',
-    'smart-risk-analysis',
-    'ai-performance',
-    'threat-intel-live',
-    'ai-detection',
-    'siem-integration',
-    'predictive-analytics',
-    'compliance-governance',
-    'incident-response',
-    'ai-reports',
-    'whois-lookup',
-    'dns-records',
-    'ip-lookup',
-    'threat-check',
-    'breach-check',
-    'file-analysis'
-  ];
-
+  const alwaysAvailableFeatures = [...PUBLIC_FEATURES, ...PREMIUM_FEATURES];
   const isFeatureAlwaysAvailable = alwaysAvailableFeatures.includes(activeFeature);
   const shouldShowDashboard = hasAnalysis || isFeatureAlwaysAvailable;
 
-  // Demo scan results fallback for "file-analysis"
   const demoScanAnalysis: AnalysisData = {
     riskScore: 7.2,
     riskLevel: 'HIGH',
     totalFindings: 1,
     criticalIssues: 1,
     threats: [],
-    lastUpdated: new Date().toISOString(), // This line is now valid
+    lastUpdated: new Date().toISOString(),
     overall_risk_score: 7.2,
     summary: "Test Scan: critical vulnerability found in config.js (demo mode)",
     prioritized_findings: [
@@ -199,7 +209,7 @@ function AppContent() {
         return <IncidentResponseDashboard />;
       case 'ai-reports':
         return <AIReportsDashboard />;
-      case 'file-analysis': 
+      case 'file-analysis':
         const scanData =
           analysisData && analysisData.prioritized_findings && analysisData.prioritized_findings.length > 0
             ? analysisData
@@ -229,14 +239,9 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* NOTE: To make the logout button in your Header work:
-        1. Open src/components/Header.tsx
-        2. Add `onLogout: () => void;` to its props interface.
-        3. Add `onLogout={logout}` back to the <Header> component below.
-      */}
-      <Header onReset={handleReset} /* onLogout={logout} */ />
+      <Header onReset={handleReset} onLogout={logout} />
       <div className="flex h-[calc(100vh-64px)]">
-        <div className="w-80 bg-gray-800 border-r border-gray-700">
+        <div className="w-80 bg-gray-800 border-r border-gray-700 overflow-y-auto scrollbar-hide">
           <Sidebar
             activeFeature={activeFeature}
             onFeatureSelect={handleFeatureSelect}
@@ -244,15 +249,14 @@ function AppContent() {
           />
         </div>
         <div className="flex h-full flex-1">
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 p-6 overflow-y-auto scrollbar-hide">
             {shouldShowDashboard ? (
               renderActiveFeature()
             ) : (
               <LandingScreen onAnalysisComplete={handleAnalysisComplete} />
             )}
-            {/* FIX: The extra '}' was removed from here */}
           </div>
-          <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto">
+          <div className="w-96 bg-gray-800 border-l border-gray-700 overflow-y-auto scrollbar-hide">
             <AIAssistant
               disabled={!hasAnalysis && !isFeatureAlwaysAvailable}
               dashboardContext={{
@@ -270,37 +274,13 @@ function AppContent() {
   );
 }
 
-// --- NEW PROTECTED ROUTE COMPONENT ---
-// This component wraps your main app content and checks for auth.
-const ProtectedRoute: React.FC = () => {
-  const { isLoggedIn, isLoading } = useAuth();
-
-  if (isLoading) {
-    // This state is from the AuthProvider checking localStorage
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-            Loading session...
-        </div>
-    );
-  }
-
-  // If logged in, render the child routes (AppContent).
-  // Otherwise, redirect to the /login page.
-  return isLoggedIn ? <Outlet /> : <Navigate to="/login" replace />;
-};
-
-// --- UPDATED APP COMPONENT ---
-// This now contains the main routing logic.
 function App() {
-  // We need to get isLoggedIn here to handle the /login route redirect
-  // This hook will work because AuthProvider is wrapping <App /> in main.tsx
-  const { isLoggedIn, isLoading } = useAuth(); // Get isLoading as well
+  const { isLoading, isLoggedIn } = useAuth();
 
-  // Wait until auth state is confirmed before rendering routes
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-          Loading session...
+        Loading session...
       </div>
     );
   }
@@ -308,31 +288,41 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/login"
-          element={
-            // If already logged in, redirect to the main app
-            isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />
-          }
-        />
-        <Route 
-          path="/auth/callback" 
-          element={<AuthCallbackPage />} 
-        />
+        {/* Welcome/Home Page (First Visit) */}
+        <Route path="/" element={
+          <div className="min-h-screen bg-gray-900">
+            <Header onReset={() => {}} onLogout={() => {}} />
+            <WelcomePage />
+          </div>
+        } />
 
-        {/* Protected Routes */}
-        {/* This route wrapper will check auth for all nested routes */}
-        <Route element={<ProtectedRoute />}>
-          {/* All of your existing app logic is now protected */}
-          {/* "/*" will catch "/" and all other nested routes */}
-          <Route path="/*" element={<AppContent />} />
-        </Route>
-        
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+        {/* Dashboard & Features */}
+        <Route path="/threat-intelligence" element={<AppContent />} />
+        <Route path="/whois-lookup" element={<AppContent />} />
+        <Route path="/dns-records" element={<AppContent />} />
+        <Route path="/ip-lookup" element={<AppContent />} />
+        <Route path="/threat-check" element={<AppContent />} />
+        <Route path="/breach-check" element={<AppContent />} />
+        <Route path="/file-analysis" element={<AppContent />} />
+        <Route path="/github" element={<AppContent />} />
+        <Route path="/infrastructure" element={<AppContent />} />
+        <Route path="/risk" element={<AppContent />} />
+        <Route path="/ai-detection" element={<AppContent />} />
+        <Route path="/siem" element={<AppContent />} />
+        <Route path="/predictive" element={<AppContent />} />
+        <Route path="/live-threats" element={<AppContent />} />
+        <Route path="/ai-performance" element={<AppContent />} />
+        <Route path="/compliance" element={<AppContent />} />
+        <Route path="/incident-response" element={<AppContent />} />
+        <Route path="/ai-reports" element={<AppContent />} />
       </Routes>
     </Router>
   );
 }
 
 export default App;
-

@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const LoginPage = () => {
+const SignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,17 +18,13 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await signup(email, password, username || undefined);
       navigate('/'); // Redirect to dashboard
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGitHubLogin = () => {
-    window.location.href = 'http://localhost:8000/api/v1/auth/login/github';
   };
 
   return (
@@ -52,14 +49,14 @@ const LoginPage = () => {
           marginBottom: '8px',
           color: 'var(--color-text)'
         }}>
-          Welcome Back
+          Create Account
         </h1>
         
         <p style={{ 
           color: 'var(--color-text-secondary)', 
           marginBottom: '24px' 
         }}>
-          Sign in to access premium features
+          Get started with Cyber.AI
         </p>
 
         {error && (
@@ -105,6 +102,33 @@ const LoginPage = () => {
             />
           </div>
 
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontSize: 'var(--font-size-sm)',
+              fontWeight: 'var(--font-weight-medium)',
+              color: 'var(--color-text)'
+            }}>
+              Username (optional)
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="johndoe"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                fontSize: 'var(--font-size-base)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-base)',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text)'
+              }}
+            />
+          </div>
+
           <div style={{ marginBottom: '24px' }}>
             <label style={{
               display: 'block',
@@ -137,36 +161,10 @@ const LoginPage = () => {
             type="submit"
             disabled={loading}
             className="btn btn--primary btn--full-width"
-            style={{ marginBottom: '16px' }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
-
-        <div style={{ 
-          textAlign: 'center', 
-          margin: '16px 0',
-          color: 'var(--color-text-secondary)',
-          fontSize: 'var(--font-size-sm)'
-        }}>
-          or
-        </div>
-
-        <button
-          onClick={handleGitHubLogin}
-          className="btn btn--outline btn--full-width"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          Continue with GitHub
-        </button>
 
         <p style={{ 
           textAlign: 'center',
@@ -174,15 +172,15 @@ const LoginPage = () => {
           fontSize: 'var(--font-size-sm)',
           color: 'var(--color-text-secondary)'
         }}>
-          Don't have an account?{' '}
+          Already have an account?{' '}
           <Link 
-            to="/signup" 
+            to="/login" 
             style={{ 
               color: 'var(--color-primary)',
               fontWeight: 'var(--font-weight-medium)'
             }}
           >
-            Sign up
+            Sign in
           </Link>
         </p>
       </div>
@@ -190,4 +188,5 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;
+
