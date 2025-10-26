@@ -7,7 +7,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -31,159 +31,59 @@ const LoginPage = () => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      backgroundColor: 'var(--color-background)'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '400px',
-        padding: '32px',
-        backgroundColor: 'var(--color-surface)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-lg)'
-      }}>
-        <h1 style={{ 
-          fontSize: 'var(--font-size-3xl)', 
-          fontWeight: 'var(--font-weight-bold)',
-          marginBottom: '8px',
-          color: 'var(--color-text)'
-        }}>
-          Welcome Back
-        </h1>
-        
-        <p style={{ 
-          color: 'var(--color-text-secondary)', 
-          marginBottom: '24px' 
-        }}>
-          Sign in to access premium features
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-lg">
+        <h1 className="text-3xl font-bold mb-2 text-white">Welcome Back</h1>
+        <p className="text-gray-400 mb-6">Sign in to access premium features</p>
 
         {error && (
-          <div style={{
-            padding: '12px',
-            marginBottom: '16px',
-            backgroundColor: 'rgba(var(--color-error-rgb), 0.1)',
-            border: '1px solid var(--color-error)',
-            borderRadius: 'var(--radius-base)',
-            color: 'var(--color-error)',
-            fontSize: 'var(--font-size-sm)'
-          }}>
+          <div className="px-4 py-3 mb-4 bg-red-100 border border-red-400 rounded text-red-700 text-sm">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-medium)',
-              color: 'var(--color-text)'
-            }}>
-              Email
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-200 font-medium mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: 'var(--font-size-base)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-base)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)'
-              }}
+              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-medium)',
-              color: 'var(--color-text)'
-            }}>
-              Password
-            </label>
+          <div>
+            <label className="block text-sm text-gray-200 font-medium mb-1">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: 'var(--font-size-base)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-base)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)'
-              }}
+              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-
           <button
             type="submit"
             disabled={loading}
-            className="btn btn--primary btn--full-width"
-            style={{ marginBottom: '16px' }}
+            className="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded transition-colors"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div style={{ 
-          textAlign: 'center', 
-          margin: '16px 0',
-          color: 'var(--color-text-secondary)',
-          fontSize: 'var(--font-size-sm)'
-        }}>
-          or
-        </div>
-
+        <div className="my-6 text-sm text-gray-400 text-center">or</div>
         <button
           onClick={handleGitHubLogin}
-          className="btn btn--outline btn--full-width"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-          }}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
         >
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-          </svg>
-          Continue with GitHub
+          {/* Place GitHub SVG here if you like */}
+          <span>Continue with GitHub</span>
         </button>
-
-        <p style={{ 
-          textAlign: 'center',
-          marginTop: '24px',
-          fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-text-secondary)'
-        }}>
-          Don't have an account?{' '}
-          <Link 
-            to="/signup" 
-            style={{ 
-              color: 'var(--color-primary)',
-              fontWeight: 'var(--font-weight-medium)'
-            }}
-          >
-            Sign up
-          </Link>
+        <p className="mt-6 text-center text-gray-400 text-sm">
+          Don't have an account? <Link to="/signup" className="text-teal-400 hover:underline">Sign up</Link>
         </p>
       </div>
     </div>

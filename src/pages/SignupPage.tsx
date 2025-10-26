@@ -8,7 +8,7 @@ const SignupPage = () => {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { signup } = useAuth();
   const navigate = useNavigate();
 
@@ -19,7 +19,7 @@ const SignupPage = () => {
 
     try {
       await signup(email, password, username || undefined);
-      navigate('/'); // Redirect to dashboard
+      navigate('/');
     } catch (err: any) {
       setError(err.message || 'Signup failed. Please try again.');
     } finally {
@@ -28,160 +28,59 @@ const SignupPage = () => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      backgroundColor: 'var(--color-background)'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '400px',
-        padding: '32px',
-        backgroundColor: 'var(--color-surface)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-lg)'
-      }}>
-        <h1 style={{ 
-          fontSize: 'var(--font-size-3xl)', 
-          fontWeight: 'var(--font-weight-bold)',
-          marginBottom: '8px',
-          color: 'var(--color-text)'
-        }}>
-          Create Account
-        </h1>
-        
-        <p style={{ 
-          color: 'var(--color-text-secondary)', 
-          marginBottom: '24px' 
-        }}>
-          Get started with Cyber.AI
-        </p>
-
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-lg">
+        <h1 className="text-3xl font-bold mb-2 text-white">Create Account</h1>
+        <p className="text-gray-400 mb-6">Get started with Cyber.AI</p>
         {error && (
-          <div style={{
-            padding: '12px',
-            marginBottom: '16px',
-            backgroundColor: 'rgba(var(--color-error-rgb), 0.1)',
-            border: '1px solid var(--color-error)',
-            borderRadius: 'var(--radius-base)',
-            color: 'var(--color-error)',
-            fontSize: 'var(--font-size-sm)'
-          }}>
+          <div className="px-4 py-3 mb-4 bg-red-100 border border-red-400 rounded text-red-700 text-sm">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-medium)',
-              color: 'var(--color-text)'
-            }}>
-              Email
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-200 font-medium mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: 'var(--font-size-base)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-base)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)'
-              }}
+              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-medium)',
-              color: 'var(--color-text)'
-            }}>
-              Username (optional)
-            </label>
+          <div>
+            <label className="block text-sm text-gray-200 font-medium mb-1">Username (optional)</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="johndoe"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: 'var(--font-size-base)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-base)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)'
-              }}
+              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: 'var(--font-size-sm)',
-              fontWeight: 'var(--font-weight-medium)',
-              color: 'var(--color-text)'
-            }}>
-              Password
-            </label>
+          <div>
+            <label className="block text-sm text-gray-200 font-medium mb-1">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: 'var(--font-size-base)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-base)',
-                backgroundColor: 'var(--color-surface)',
-                color: 'var(--color-text)'
-              }}
+              className="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-
           <button
             type="submit"
             disabled={loading}
-            className="btn btn--primary btn--full-width"
+            className="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded transition-colors"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
-
-        <p style={{ 
-          textAlign: 'center',
-          marginTop: '24px',
-          fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-text-secondary)'
-        }}>
-          Already have an account?{' '}
-          <Link 
-            to="/login" 
-            style={{ 
-              color: 'var(--color-primary)',
-              fontWeight: 'var(--font-weight-medium)'
-            }}
-          >
-            Sign in
-          </Link>
+        <p className="mt-6 text-center text-gray-400 text-sm">
+          Already have an account? <Link to="/login" className="text-teal-400 hover:underline">Sign in</Link>
         </p>
       </div>
     </div>
@@ -189,4 +88,3 @@ const SignupPage = () => {
 };
 
 export default SignupPage;
-
