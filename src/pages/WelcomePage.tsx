@@ -1,70 +1,71 @@
-import React from 'react';
-import { Shield, ArrowRight } from 'lucide-react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+
+const LOGO_URL = "/logo-cyber.ai.jpg";
+
+const features = [
+  "Threat Intelligence Analysis",
+  "Real-time Security Monitoring",
+  "AI-Powered Risk Assessment",
+  "GitHub Repository Scanning"
+];
 
 const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
-  const features = [
-    "Threat Intelligence Analysis",
-    "Real-time Security Monitoring", 
-    "AI-Powered Risk Assessment",
-    "GitHub Repository Scanning"
-  ];
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate('/threat-intelligence');
+    }
+  }, [isLoggedIn, navigate]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      {/* Main Content - Centered */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8">
-        {/* Logo & Title */}
-        <div className="mb-12 text-center">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <Shield className="w-16 h-16 text-teal-400" />
-          </div>
-          <h1 className="text-6xl font-bold mb-4">
-            <span className="text-white">Cyber</span>
-            <span className="text-teal-400">.AI</span>
-          </h1>
-          <p className="text-xl text-gray-400">
-            Executive Security Platform for Real-time Threat Intelligence
-          </p>
-        </div>
-
-        {/* Feature Cards */}
-        <div className="grid grid-cols-2 gap-4 mb-12 max-w-2xl">
-          {features.map((feature, index) => (
+    <div className="min-h-screen bg-gradient-to-br from-[#071018] via-[#202c41] to-[#151926] flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <img
+          src={LOGO_URL}
+          alt="NexaSecure.ai Logo"
+          className="w-36 sm:w-44 mb-8 drop-shadow-2xl"
+          style={{ userSelect: 'none' }}
+          draggable={false}
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+        <h1 className="text-5xl md:text-6xl font-light tracking-tight mb-1 text-center text-white">
+          Nexa<span className="text-teal-400">Secure.ai</span>
+        </h1>
+        <p className="text-lg mb-10 text-gray-300 text-center max-w-xl font-normal">
+          AI-driven threat intelligence & real-time security for next-gen teams.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10 w-full max-w-xl">
+          {features.map((feature, idx) => (
             <div
-              key={index}
-              className="bg-gray-800 hover:bg-gray-750 border border-gray-700 rounded-lg p-6 cursor-pointer transition-all hover:border-teal-500"
-              onClick={() => navigate('/threat-intelligence')}
+              key={idx}
+              className="bg-black/30 border border-gray-800 rounded-lg p-5 text-center font-medium text-gray-200 transition-all hover:shadow hover:border-teal-400"
             >
-              <p className="text-gray-300 text-center">{feature}</p>
+              {feature}
             </div>
           ))}
         </div>
-
-        {/* CTA Buttons */}
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 mt-2">
           <button
             onClick={() => navigate('/threat-intelligence')}
-            className="px-8 py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2 text-lg"
+            className="px-8 py-4 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-semibold text-lg shadow transition-colors"
           >
             Get Started
-            <ArrowRight className="w-5 h-5" />
           </button>
           <button
             onClick={() => navigate('/login')}
-            className="px-8 py-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white rounded-lg font-medium transition-colors text-lg"
+            className="px-8 py-4 bg-gray-800 border border-gray-700 hover:bg-gray-700 text-white rounded-lg font-semibold text-lg shadow"
           >
             Sign In
           </button>
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="py-8 text-center text-sm text-gray-500">
-        <p>Powered by advanced AI and real-time threat intelligence</p>
-      </div>
+      <footer className="py-4 text-center text-gray-500 text-xs">
+        &copy; {new Date().getFullYear()} NexaSecure.ai — AI-powered security platform.
+      </footer>
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,17 +12,20 @@ const Header: React.FC<HeaderProps> = ({ onReset, onLogout }) => {
   const { isLoggedIn, user } = useAuth();
 
   return (
-    <header className="h-16 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-6">
-      {/* Left: Logo */}
-      <div className="flex items-center space-x-4">
-        <Shield className="w-8 h-8 text-blue-400" />
-        <div>
-          <h1 className="text-xl font-bold text-white">CYBER.AI</h1>
-          <p className="text-xs text-gray-400">Executive Security Platform</p>
-        </div>
+    <header className="h-16 bg-[#192537] border-b border-gray-800 flex items-center justify-between px-6 shadow-sm z-20">
+      {/* Left: Logo & Title */}
+      <div className="flex items-center gap-3 cursor-pointer" onClick={onReset}>
+        <img
+          src="/logo-cyber.ai.jpg"
+          alt="NexaSecure.ai logo"
+          className="w-8 h-8 object-contain"
+          style={{ userSelect: 'none' }}
+          draggable={false}
+        />
+        <span className="text-xl font-bold text-white tracking-wide">NexaSecure.ai</span>
       </div>
 
-      {/* Center: Status */}
+      {/* Center: Service status/date */}
       <div className="flex items-center space-x-6 text-sm">
         <div className="flex items-center">
           <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
@@ -31,19 +33,19 @@ const Header: React.FC<HeaderProps> = ({ onReset, onLogout }) => {
         </div>
         <span className="text-gray-500">
           {new Date().toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
+            month: 'short',
+            day: 'numeric',
             year: 'numeric' 
           })}
         </span>
       </div>
 
-      {/* Right: Auth Buttons */}
+      {/* Right: Auth buttons */}
       <div className="flex items-center gap-3">
         {isLoggedIn ? (
           <>
             {user?.email && (
-              <div className="text-sm text-gray-400 mr-2">
+              <div className="text-sm text-gray-300 mr-2">
                 {user.username || user.email}
               </div>
             )}

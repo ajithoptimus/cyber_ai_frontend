@@ -22,6 +22,7 @@ import PredictiveAnalyticsDashboard from './components/PredictiveAnalyticsDashbo
 import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
 import AIReportsDashboard from './components/AIReportsDashboard';
+import LoggedOutPage from './pages/LoggedOutPage';
 
 // Auth Imports
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -320,6 +321,7 @@ function App() {
         <Route path="/compliance" element={<AppContent />} />
         <Route path="/incident-response" element={<AppContent />} />
         <Route path="/ai-reports" element={<AppContent />} />
+        <Route path="/logged-out" element={<LoggedOutPage />} />
       </Routes>
     </Router>
   );

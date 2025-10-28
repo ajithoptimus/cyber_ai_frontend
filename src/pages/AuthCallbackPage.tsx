@@ -3,33 +3,32 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const AuthCallbackPage: React.FC = () => {
-  const { setAuthToken } = useAuth(); // Use setAuthToken instead of login
+  const { setAuthToken } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get token from URL query parameter (sent by backend after GitHub OAuth)
+    // Only run once on component mount
     const token = searchParams.get('token');
     const error = searchParams.get('error');
 
     if (error) {
       console.error('OAuth Error:', error);
-      navigate('/login');
+      navigate('/login', { replace: true });
       return;
     }
 
     if (token) {
-      // Set the token in context and localStorage
       setAuthToken(token);
-      
-      // Redirect to the main app (dashboard)
-      navigate('/');
+      // Redirect to dashboard
+      navigate('/threat-intelligence', { replace: true });
     } else {
       // No token found, redirect to login
       console.warn('Invalid access to callback page - no token found.');
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
-  }, [searchParams, setAuthToken, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // <-- Only on mount (prevents infinite loop)
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">

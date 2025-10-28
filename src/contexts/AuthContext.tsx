@@ -149,12 +149,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Logout
    */
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    setToken(null);
-    setUser(null);
-    window.location.href = '/login';
-  };
-
+  localStorage.removeItem('accessToken');
+  setToken(null);
+  setUser(null);
+  // Show logged-out screen with GitHub logout link
+  window.location.href = '/logged-out';
+ };
   const isLoggedIn = !!token;
 
   // Loading screen
