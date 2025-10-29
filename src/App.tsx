@@ -23,6 +23,8 @@ import ComplianceDashboard from './pages/Compliance/ComplianceDashboard';
 import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponseDashboard';
 import AIReportsDashboard from './components/AIReportsDashboard';
 import LoggedOutPage from './pages/LoggedOutPage';
+import GithubRepoList from './pages/GithubRepoList';
+
 
 // Auth Imports
 import AuthCallbackPage from './pages/AuthCallbackPage';
@@ -322,6 +324,8 @@ function App() {
         <Route path="/incident-response" element={<AppContent />} />
         <Route path="/ai-reports" element={<AppContent />} />
         <Route path="/logged-out" element={<LoggedOutPage />} />
+        <Route path="/github-repos" element={<GithubRepoList />} />
+
       </Routes>
     </Router>
   );
