@@ -9,6 +9,7 @@ import BreachCheck from './BreachCheck';
 import GitHubIntegration from './GitHubIntegration';
 import AIPerformanceAnalytics from './AIPerformanceAnalytics';
 import ScanResultsDisplay from './ScanResultsDisplay';
+import GithubRepoList from '../pages/GithubRepoList';  // ✅ Correct path
 
 interface BackendDashboardData {
   unified_risk_score: number;
@@ -80,7 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
     }
   }, [activeFeature]);
 
-  // Safe data access with fallback
+  // Data fallback
   const displayData = backendData?.reputation_cards
     ? {
         riskScore: backendData.unified_risk_score,
@@ -129,13 +130,15 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
       <div className="relative flex items-center justify-center">
         <svg width="140" height="140" className="transform -rotate-90">
           <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(75, 85, 99, 0.3)" strokeWidth="8" />
-          <circle cx="70" cy="70" r="60" fill="none" stroke="currentColor" strokeWidth="8"
+          <circle 
+            cx="70" cy="70" r="60" fill="none" stroke="currentColor" strokeWidth="8"
             strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
-            className={`${getRiskColor(displayData.riskLevel)} transition-all duration-2000`} />
+            className={`${getRiskColor(displayData.riskLevel)} transition-all duration-2000`}
+          />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className={`text-4xl font-bold ${getRiskColor(displayData.riskLevel)}`}>
-            {displayData.riskScore.toFixed(1)}
+            {Number(displayData.riskScore).toFixed(1)}
           </span>
           <span className="text-sm text-gray-400 uppercase tracking-wider">{displayData.riskLevel}</span>
         </div>
@@ -144,9 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
   };
 
   // === FEATURE ROUTING ===
-  
   if (activeFeature === 'file-analysis') {
-    // Demo/test object if real findings array missing or empty
     const demoAnalysis = {
       overall_risk_score: 7.5,
       summary: "Demo scan complete. Critical finding requires attention.",
@@ -180,8 +181,6 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
         </div>
         <FileUpload />
         <div className="mt-8">
-          {/* This now always shows the ScanResultsDisplay,
-              using demoAnalysis if there is no real data */}
           <ScanResultsDisplay analysis={showScan ? data : demoAnalysis} />
         </div>
       </div>
@@ -290,6 +289,11 @@ const Dashboard: React.FC<DashboardProps> = ({ data, activeFeature }) => {
               <p className="text-gray-400 text-sm">{threat.description}</p>
             </div>
           ))}
+        </div>
+        {/* === GITHUB REPO SCANNER SECTION === */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-white mb-4">GitHub Repository Security</h2>
+          <GithubRepoList />
         </div>
         {error && (
           <div className="bg-red-900/20 border border-red-500 p-4 rounded-lg">

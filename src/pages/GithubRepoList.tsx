@@ -10,15 +10,18 @@ interface GithubRepo {
   description?: string;
 }
 
+interface ScanStatusData {
+  status: string;
+  summary?: string;
+}
+
 const GithubRepoList: React.FC = () => {
   const [repos, setRepos] = useState<GithubRepo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [scanStatus, setScanStatus] = useState<{ [repoId: number]: string }>({});
+  const [scanStatus, setScanStatus] = useState<{ [repoId: number]: ScanStatusData }>({});
+  const [isScanning, setIsScanning] = useState<{ [repoId: number]: boolean }>({});
   const { token } = useAuth();
-
-  console.log("TOKEN IN USE:", token);
-
 
   useEffect(() => {
     const fetchRepos = async () => {
@@ -46,12 +49,13 @@ const GithubRepoList: React.FC = () => {
     fetchRepos();
   }, [token]);
 
-  // Scan trigger logic
+  // Scan trigger logic, including scan status polling
   const triggerScan = async (repo: GithubRepo) => {
-    setScanStatus((prev) => ({ ...prev, [repo.id]: "Starting..." }));
+    setIsScanning((prev) => ({ ...prev, [repo.id]: true }));
+    setScanStatus((prev) => ({ ...prev, [repo.id]: { status: "Starting..." } }));
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/scans/start", {
+      const response = await fetch("http://localhost:8000/api/v1/scanner/scan", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,11 +72,40 @@ const GithubRepoList: React.FC = () => {
       }
       const data = await response.json();
       const scan_id = data.scan_id;
-      setScanStatus((prev) => ({ ...prev, [repo.id]: `Scan started! ID: ${scan_id}` }));
+      setScanStatus((prev) => ({ ...prev, [repo.id]: { status: "Scanning..." } }));
 
-      // TODO: Optional - add scan status polling with scan_id
+      // Poll scan status every 2 seconds
+      pollScanStatus(scan_id, repo.id);
     } catch (err: any) {
-      setScanStatus((prev) => ({ ...prev, [repo.id]: "Scan failed!" }));
+      setScanStatus((prev) => ({ ...prev, [repo.id]: { status: "Scan failed!" } }));
+      setIsScanning((prev) => ({ ...prev, [repo.id]: false }));
+    }
+  };
+
+  const pollScanStatus = async (scanId: string, repoId: number) => {
+    let polling = true;
+    while (polling) {
+      try {
+        const res = await fetch(`http://localhost:8000/api/v1/scanner/scans/${scanId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        const finished = ["completed", "error", "failed"].includes(data.status);
+        setScanStatus((prev) => ({
+          ...prev,
+          [repoId]: { status: finished ? data.status : "Scanning...", summary: data.summary },
+        }));
+        if (finished) {
+          setIsScanning((prev) => ({ ...prev, [repoId]: false }));
+          polling = false;
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      } catch {
+        setScanStatus((prev) => ({ ...prev, [repoId]: { status: "Polling error!" } }));
+        setIsScanning((prev) => ({ ...prev, [repoId]: false }));
+        polling = false;
+      }
     }
   };
 
@@ -88,6 +121,7 @@ const GithubRepoList: React.FC = () => {
             <th className="py-2">Name</th>
             <th className="py-2">Visibility</th>
             <th className="py-2">Action</th>
+            <th className="py-2">Scan Result</th>
           </tr>
         </thead>
         <tbody>
@@ -107,14 +141,28 @@ const GithubRepoList: React.FC = () => {
               <td className="py-2">{repo.private ? "Private" : "Public"}</td>
               <td className="py-2">
                 <button
-                  className="bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-700"
+                  className="bg-indigo-600 text-white px-4 py-1 rounded hover:bg-indigo-700 flex items-center gap-2"
                   onClick={() => triggerScan(repo)}
+                  disabled={!!isScanning[repo.id]}
                 >
-                  Scan
+                  {isScanning[repo.id] ? (
+                    <span className="animate-spin mr-2">⏳</span>
+                  ) : (
+                    "Scan"
+                  )}
                 </button>
                 <div className="text-sm text-gray-400 min-h-5">
-                  {scanStatus[repo.id]}
+                  {scanStatus[repo.id]?.status}
                 </div>
+              </td>
+              <td className="py-2">
+                {scanStatus[repo.id]?.summary ? (
+                  <span className="text-green-600 font-semibold">
+                    {scanStatus[repo.id].summary}
+                  </span>
+                ) : (
+                  <span className="text-gray-400 text-xs">No summary available</span>
+                )}
               </td>
             </tr>
           ))}

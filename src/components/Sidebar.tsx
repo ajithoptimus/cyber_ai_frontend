@@ -12,7 +12,6 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disabled = false }) => {
-
   const isAuthenticated = Boolean(localStorage.getItem('accessToken'));
 
   const tools = [
