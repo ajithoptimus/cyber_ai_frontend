@@ -1,11 +1,12 @@
+// src/App.tsx
+
 import React, { useState, useEffect } from 'react';
 import { 
   BrowserRouter as Router, 
   Routes, 
   Route, 
   useNavigate, 
-  useLocation,
-  Navigate
+  useLocation
 } from 'react-router-dom';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -25,13 +26,14 @@ import AIReportsDashboard from './components/AIReportsDashboard';
 import LoggedOutPage from './pages/LoggedOutPage';
 import GithubRepoList from './pages/GithubRepoList';
 
-
-// Auth Imports
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import WelcomePage from './pages/WelcomePage'; // NEW: Import welcome page
+import WelcomePage from './pages/WelcomePage';
 import { useAuth } from './contexts/AuthContext';
+
+// NEW: Admin Users Page
+import AdminUsersPage from './pages/AdminUsersPage';
 
 export interface AnalysisData {
   riskScore: number;
@@ -49,7 +51,6 @@ export interface AnalysisData {
   prioritized_findings?: any[];
 }
 
-// Public features (no login required)
 const PUBLIC_FEATURES = [
   'threat-intelligence',
   'whois-lookup',
@@ -58,7 +59,6 @@ const PUBLIC_FEATURES = [
   'threat-check'
 ];
 
-// Premium features (login required)
 const PREMIUM_FEATURES = [
   'github-integration',
   'breach-check',
@@ -75,7 +75,6 @@ const PREMIUM_FEATURES = [
   'ai-reports'
 ];
 
-// AppContent for your main app (dashboard with sidebar)
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -278,7 +277,7 @@ function AppContent() {
 }
 
 function App() {
-  const { isLoading, isLoggedIn } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -325,7 +324,9 @@ function App() {
         <Route path="/ai-reports" element={<AppContent />} />
         <Route path="/logged-out" element={<LoggedOutPage />} />
         <Route path="/github-repos" element={<GithubRepoList />} />
-
+        
+        {/* Admin Users Dashboard */}
+        <Route path="/admin/users" element={<AdminUsersPage />} />
       </Routes>
     </Router>
   );
