@@ -17,7 +17,7 @@ interface IntelligentAnalysis {
 }
 
 interface RiskAnalysisData {
-  intelligent_analysis: IntelligentAnalysis;
+  intelligent_analysis?: IntelligentAnalysis;
   findings_analyzed: number;
   risk_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   analysis_timestamp: string;
@@ -33,13 +33,12 @@ const SmartRiskDashboard: React.FC = () => {
   useEffect(() => {
     fetchIntelligentRiskAnalysis();
 
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (autoRefresh) {
       interval = setInterval(() => {
         fetchIntelligentRiskAnalysis(true);
       }, 30000);
     }
-
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -54,7 +53,6 @@ const SmartRiskDashboard: React.FC = () => {
 
     try {
       const response = await fetch('http://localhost:8000/api/v1/infrastructure/risk-analysis');
-      
       if (response.ok) {
         const data: RiskAnalysisData = await response.json();
         setRiskData(data);
@@ -137,7 +135,7 @@ const SmartRiskDashboard: React.FC = () => {
     if (!date) return 'Never';
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (seconds < 60) return `${seconds}s ago`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     return date.toLocaleTimeString();
@@ -154,7 +152,23 @@ const SmartRiskDashboard: React.FC = () => {
     );
   }
 
-  if (!riskData) return null;
+  // Fallback UI if there's no risk data or intelligent analysis
+  if (!riskData || !riskData.intelligent_analysis) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="text-red-400 font-bold">Intelligent risk analysis unavailable</div>
+          <div className="text-gray-400">Check backend API or data integration.</div>
+          <button
+            onClick={handleManualRefresh}
+            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded font-medium"
+          >Retry</button>
+        </div>
+      </div>
+    );
+  }
+
+  const { intelligent_analysis } = riskData;
 
   return (
     <div className="space-y-6">
@@ -169,14 +183,12 @@ const SmartRiskDashboard: React.FC = () => {
             <p className="text-gray-400">Intelligent analysis of compound risks and attack scenarios</p>
           </div>
         </div>
-
         {/* Refresh Controls */}
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 text-sm text-gray-400">
             <Clock className="w-4 h-4" />
             <span>Updated: {formatTimestamp(lastUpdated)}</span>
           </div>
-
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
@@ -184,10 +196,7 @@ const SmartRiskDashboard: React.FC = () => {
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                 : 'bg-gray-700 text-gray-400 border border-gray-600'
             }`}
-          >
-            Auto-refresh: {autoRefresh ? 'ON' : 'OFF'}
-          </button>
-
+          >Auto-refresh: {autoRefresh ? 'ON' : 'OFF'}</button>
           <button
             onClick={handleManualRefresh}
             disabled={refreshing}
@@ -198,7 +207,6 @@ const SmartRiskDashboard: React.FC = () => {
           </button>
         </div>
       </div>
-
       {/* Risk Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Total Risk Score */}
@@ -207,18 +215,17 @@ const SmartRiskDashboard: React.FC = () => {
             <span className="text-gray-400 text-sm">Intelligence Risk Score</span>
             <TrendingUp className="w-5 h-5 text-purple-400" />
           </div>
-          <div className={`text-4xl font-bold ${getRiskScoreColor(riskData.intelligent_analysis.total_risk_score)}`}>
-            {riskData.intelligent_analysis.total_risk_score.toFixed(1)}
+          <div className={`text-4xl font-bold ${getRiskScoreColor(intelligent_analysis.total_risk_score)}`}>
+            {intelligent_analysis?.total_risk_score?.toFixed(1) ?? 'N/A'}
           </div>
           <div className="text-xs text-gray-500 mt-1">out of 10.0</div>
           <div className="mt-3 h-2 bg-gray-700 rounded-full overflow-hidden">
             <div
-              className={`h-full ${getRiskScoreColor(riskData.intelligent_analysis.total_risk_score).replace('text', 'bg')}`}
-              style={{ width: `${(riskData.intelligent_analysis.total_risk_score / 10) * 100}%` }}
+              className={`h-full ${getRiskScoreColor(intelligent_analysis.total_risk_score).replace('text', 'bg')}`}
+              style={{ width: `${(intelligent_analysis.total_risk_score / 10) * 100}%` }}
             />
           </div>
         </div>
-
         {/* Risk Level */}
         <div className={`rounded-lg p-6 border ${getRiskColor(riskData.risk_level)} hover:shadow-lg transition-shadow`}>
           <div className="flex items-center justify-between mb-2">
@@ -228,7 +235,6 @@ const SmartRiskDashboard: React.FC = () => {
           <div className="text-2xl font-bold">{riskData.risk_level}</div>
           <div className="text-xs mt-1 opacity-80">Requires immediate attention</div>
         </div>
-
         {/* Compound Risks */}
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-red-500/50 transition-colors">
           <div className="flex items-center justify-between mb-2">
@@ -236,11 +242,10 @@ const SmartRiskDashboard: React.FC = () => {
             <Target className="w-5 h-5 text-red-400" />
           </div>
           <div className="text-4xl font-bold text-red-400">
-            {riskData.intelligent_analysis.compound_risks.length}
+            {intelligent_analysis.compound_risks.length}
           </div>
           <div className="text-xs text-gray-500 mt-1">dangerous combinations</div>
         </div>
-
         {/* Findings Analyzed */}
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-green-500/50 transition-colors">
           <div className="flex items-center justify-between mb-2">
@@ -251,7 +256,6 @@ const SmartRiskDashboard: React.FC = () => {
           <div className="text-xs text-gray-500 mt-1">security findings</div>
         </div>
       </div>
-
       {/* Compound Risk Analysis */}
       <div className="bg-gray-800 rounded-lg border border-gray-700">
         <div className="p-6 border-b border-gray-700">
@@ -261,10 +265,9 @@ const SmartRiskDashboard: React.FC = () => {
           </h3>
           <p className="text-gray-400 text-sm">AI-detected dangerous combinations and attack scenarios</p>
         </div>
-        
         <div className="p-6 space-y-4">
-          {riskData.intelligent_analysis.compound_risks.length > 0 ? (
-            riskData.intelligent_analysis.compound_risks.map((risk, index) => (
+          {intelligent_analysis.compound_risks.length > 0 ? (
+            intelligent_analysis.compound_risks.map((risk, index) => (
               <div key={index} className="border border-gray-700 rounded-lg p-5 hover:bg-gray-700/30 transition-colors">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center space-x-2">
@@ -279,9 +282,7 @@ const SmartRiskDashboard: React.FC = () => {
                     Base Risk: <span className="font-semibold text-white">{risk.base_risk.toFixed(1)}/10</span>
                   </span>
                 </div>
-                
                 <h4 className="font-semibold text-white text-lg mb-4">{risk.component}</h4>
-                
                 {/* Attack Scenarios */}
                 <div className="mb-4">
                   <h5 className="text-sm font-semibold text-purple-400 mb-3 flex items-center">
@@ -307,7 +308,6 @@ const SmartRiskDashboard: React.FC = () => {
           )}
         </div>
       </div>
-
       {/* AI Recommendations */}
       <div className="bg-gray-800 rounded-lg border border-gray-700">
         <div className="p-6 border-b border-gray-700">
@@ -317,11 +317,10 @@ const SmartRiskDashboard: React.FC = () => {
           </h3>
           <p className="text-gray-400 text-sm">Prioritized actions to reduce compound risks</p>
         </div>
-        
         <div className="p-6">
-          {riskData.intelligent_analysis.recommended_actions.length > 0 ? (
+          {intelligent_analysis.recommended_actions.length > 0 ? (
             <div className="space-y-3">
-              {riskData.intelligent_analysis.recommended_actions.map((action, index) => (
+              {intelligent_analysis.recommended_actions.map((action, index) => (
                 <div key={index} className="flex items-start space-x-3 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg hover:bg-blue-900/30 transition-colors">
                   <div className="w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                     {index + 1}
@@ -337,7 +336,6 @@ const SmartRiskDashboard: React.FC = () => {
           )}
         </div>
       </div>
-
       {/* Analysis Metadata */}
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
         <div className="flex items-center justify-between text-sm text-gray-400">
@@ -356,6 +354,3 @@ const SmartRiskDashboard: React.FC = () => {
 };
 
 export default SmartRiskDashboard;
-
-
-//  smart dashboard 
