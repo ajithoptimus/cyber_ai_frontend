@@ -25,7 +25,6 @@ import IncidentResponseDashboard from './pages/IncidentResponse/IncidentResponse
 import AIReportsDashboard from './components/AIReportsDashboard';
 import LoggedOutPage from './pages/LoggedOutPage';
 import GithubRepoList from './pages/GithubRepoList';
-
 import AuthCallbackPage from './pages/AuthCallbackPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -83,6 +82,7 @@ function AppContent() {
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const [activeFeature, setActiveFeature] = useState('threat-intelligence');
 
+  // --- UPDATED: Include /github-repos <-> github-integration ---
   const urlToFeatureMap: Record<string, string> = {
     '/threat-intelligence': 'threat-intelligence',
     '/whois-lookup': 'whois-lookup',
@@ -92,6 +92,7 @@ function AppContent() {
     '/breach-check': 'breach-check',
     '/file-analysis': 'file-analysis',
     '/github': 'github-integration',
+    '/github-repos': 'github-integration', // <-- The correct alias
     '/infrastructure': 'infrastructure-analysis',
     '/risk': 'smart-risk-analysis',
     '/ai-detection': 'ai-detection',
@@ -112,7 +113,7 @@ function AppContent() {
     'threat-check': '/threat-check',
     'breach-check': '/breach-check',
     'file-analysis': '/file-analysis',
-    'github-integration': '/github',
+    'github-integration': '/github-repos', // <-- This is the canonical route now
     'infrastructure-analysis': '/infrastructure',
     'smart-risk-analysis': '/risk',
     'ai-detection': '/ai-detection',
@@ -149,7 +150,6 @@ function AppContent() {
       navigate('/login');
       return;
     }
-
     setActiveFeature(feature);
     const url = featureToUrlMap[feature] || '/threat-intelligence';
     if (location.pathname !== url) {
@@ -211,6 +211,8 @@ function AppContent() {
         return <IncidentResponseDashboard />;
       case 'ai-reports':
         return <AIReportsDashboard />;
+      case 'github-integration': // <-- Show GithubRepoList for this feature
+        return <GithubRepoList />;
       case 'file-analysis':
         const scanData =
           analysisData && analysisData.prioritized_findings && analysisData.prioritized_findings.length > 0
@@ -312,6 +314,7 @@ function App() {
         <Route path="/breach-check" element={<AppContent />} />
         <Route path="/file-analysis" element={<AppContent />} />
         <Route path="/github" element={<AppContent />} />
+        <Route path="/github-repos" element={<AppContent />} /> {/* Canonical route */}
         <Route path="/infrastructure" element={<AppContent />} />
         <Route path="/risk" element={<AppContent />} />
         <Route path="/ai-detection" element={<AppContent />} />
@@ -323,7 +326,6 @@ function App() {
         <Route path="/incident-response" element={<AppContent />} />
         <Route path="/ai-reports" element={<AppContent />} />
         <Route path="/logged-out" element={<LoggedOutPage />} />
-        <Route path="/github-repos" element={<GithubRepoList />} />
         
         {/* Admin Users Dashboard */}
         <Route path="/admin/users" element={<AdminUsersPage />} />

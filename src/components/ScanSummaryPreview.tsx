@@ -37,13 +37,15 @@ export const ScanSummaryPreview: React.FC<ScanSummaryPreviewProps> = ({
     return () => resizeObserver.disconnect();
   }, [summary, maxLines]);
 
-  const lineClampClass = {
-    1: 'line-clamp-1',
-    2: 'line-clamp-2',
-    3: 'line-clamp-3',
-    4: 'line-clamp-4',
-    5: 'line-clamp-5',
-  }[maxLines as keyof typeof lineClampClass] || 'line-clamp-3';
+  const lineClampClasses: Record<number, string> = {
+  1: 'line-clamp-1',
+  2: 'line-clamp-2',
+  3: 'line-clamp-3',
+  4: 'line-clamp-4',
+  5: 'line-clamp-5',
+};
+const lineClampClass = lineClampClasses[maxLines] ?? 'line-clamp-3';
+
 
   return (
     <div className="space-y-2">
