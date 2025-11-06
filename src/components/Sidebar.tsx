@@ -1,8 +1,8 @@
 import React from 'react';
 import { 
-  Shield, Search, Globe, Server, MapPin, AlertTriangle, Database,
-  FileText, Activity, GitBranch, Building2, Brain, Zap, Target,
-  Link, TrendingUp, CheckCircle, Siren, Sparkles
+  Shield, Globe, Server, MapPin, AlertTriangle, Database,
+  FileText, GitBranch, Building2, Brain, Zap, Target,
+  Link, TrendingUp, CheckCircle, Siren, Sparkles // <-- Search, Activity removed
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -10,6 +10,9 @@ interface SidebarProps {
   onFeatureSelect: (feature: string) => void;
   disabled?: boolean;
 }
+
+// ... rest of your Sidebar code remains unchanged
+
 
 const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disabled = false }) => {
   const isAuthenticated = Boolean(localStorage.getItem('accessToken'));

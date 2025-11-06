@@ -1,22 +1,36 @@
-// File: src/services/threatIntelApi.ts
 import type { Threat, ThreatStatistics } from '../types/threatIntel';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1/threat-intel';
 
+function getAccessToken() {
+  return localStorage.getItem('accessToken');
+}
+
 export class ThreatIntelApiService {
-  private async fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = getAccessToken();
+    // Only spread token/header fields that are string-valued
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+    // If options.headers are provided, spread them as strings (if possible)
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          headers[key] = value;
+        }
+      });
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers
     });
-    
+
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
-    
     return await response.json();
   }
 

@@ -1,84 +1,106 @@
-// src/services/riskScoreApi.ts - COMPLETE WITH PDF DOWNLOAD
 import axios from 'axios';
 import type { RiskScoreData, CompoundRisk, Finding, ScanHistory, RiskTrend } from '../types/riskScore.types';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1/dashboard';
 
-export const riskScoreApi = {
-  // Get current risk score
+const riskScoreApi = {
   getCurrentRiskScore: async (): Promise<RiskScoreData> => {
-    const response = await axios.get(`${API_BASE_URL}/risk-score/current`);
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${API_BASE_URL}/risk-score/current`, {
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    });
     return response.data;
   },
 
-  // Get risk trends
   getRiskTrends: async (days: number = 30): Promise<{ trends: RiskTrend[] }> => {
-    const response = await axios.get(`${API_BASE_URL}/analytics/trends?days=${days}`);
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${API_BASE_URL}/analytics/trends?days=${days}`, {
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    });
     return response.data;
   },
 
-  // Get compound risks
   getCompoundRisks: async (status?: string): Promise<{ compound_risks: CompoundRisk[] }> => {
-    const url = status 
+    const token = localStorage.getItem('accessToken');
+    const url = status
       ? `${API_BASE_URL}/compound-risks?status=${status}`
       : `${API_BASE_URL}/compound-risks`;
-    const response = await axios.get(url);
+    const response = await axios.get(url, {
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    });
     return response.data;
   },
 
-  // Get findings
   getFindings: async (params?: {
     status?: string;
     severity?: string;
     limit?: number;
   }): Promise<{ findings: Finding[] }> => {
+    const token = localStorage.getItem('accessToken');
     const queryParams = new URLSearchParams();
     if (params?.status) queryParams.append('status', params.status);
     if (params?.severity) queryParams.append('severity', params.severity);
     if (params?.limit) queryParams.append('limit', params.limit.toString());
-    
-    const response = await axios.get(`${API_BASE_URL}/findings?${queryParams}`);
+
+    const response = await axios.get(`${API_BASE_URL}/findings?${queryParams}`, {
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    });
     return response.data;
   },
 
-  // Get scan history
   getScanHistory: async (limit: number = 20): Promise<{ scan_history: ScanHistory[] }> => {
-    const response = await axios.get(`${API_BASE_URL}/scan-history?limit=${limit}`);
+    const token = localStorage.getItem('accessToken');
+    const response = await axios.get(`${API_BASE_URL}/scan-history?limit=${limit}`, {
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    });
     return response.data;
   },
 
-  // ========================================
   // PDF REPORT DOWNLOAD
-  // ========================================
-  
-  // Download PDF report for latest scan
   downloadPDFReport: async (scanId?: string): Promise<Blob> => {
-    const url = scanId 
+    const token = localStorage.getItem('accessToken');
+    const url = scanId
       ? `${API_BASE_URL}/generate-report-pdf/${scanId}`
       : `${API_BASE_URL}/generate-report-pdf`;
-    
-    const response = await axios.post(url, {
-      filename: 'security_audit',
-      file_type: 'terraform'
-    }, {
-      responseType: 'blob', // Important: tells axios to expect binary data (PDF)
-      headers: {
-        'Accept': 'application/pdf'
+
+    const response = await axios.post(
+      url,
+      {
+        filename: 'security_audit',
+        file_type: 'terraform'
+      },
+      {
+        responseType: 'blob',
+        headers: {
+          'Accept': 'application/pdf',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }
       }
-    });
-    
+    );
     return response.data;
   },
 
-  // Download PDF report by scan ID (alternative method)
   downloadPDFReportByScanId: async (scanId: string): Promise<Blob> => {
+    const token = localStorage.getItem('accessToken');
     const response = await axios.get(`${API_BASE_URL}/generate-report-pdf/${scanId}`, {
       responseType: 'blob',
       headers: {
-        'Accept': 'application/pdf'
+        'Accept': 'application/pdf',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
     });
-    
     return response.data;
   },
 };
+
+export { riskScoreApi };

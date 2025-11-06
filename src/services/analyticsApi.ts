@@ -1,4 +1,3 @@
-// File: src/services/analyticsApi.ts
 import type {
   ThreatAnalytics,
   AIPerformanceMetrics,
@@ -9,10 +8,19 @@ import type {
 
 const API_BASE_URL = 'http://localhost:8000/api/v1/analytics';
 
+// --- Universal token get for fetch-based analytics services
+function getAccessToken() {
+  return localStorage.getItem('accessToken');
+}
 
 export class AnalyticsApiService {
   private async fetchApi<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`);
+    const token = getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, { headers });
     if (!response.ok) throw new Error(`API Error: ${response.status}`);
     return response.json();
   }
@@ -25,5 +33,3 @@ export class AnalyticsApiService {
 }
 
 export const analyticsApi = new AnalyticsApiService();
-
-

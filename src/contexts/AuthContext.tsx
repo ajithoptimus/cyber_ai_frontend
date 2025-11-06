@@ -16,21 +16,9 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoggedIn: boolean;
-  /**
-   * Login with email and password
-   */
   login: (email: string, password: string) => Promise<void>;
-  /**
-   * Signup with email, password, and optional username
-   */
   signup: (email: string, password: string, username?: string) => Promise<void>;
-  /**
-   * Manual login - sets token directly (for OAuth callback)
-   */
   setAuthToken: (newToken: string) => void;
-  /**
-   * Logs the user out
-   */
   logout: () => void;
   isLoading: boolean;
 }
@@ -74,9 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  /**
-   * Email/Password Signup
-   */
+  // Signup
   const signup = async (email: string, password: string, username?: string) => {
     try {
       const response = await fetch(`${API_URL}/auth/signup`, {
@@ -92,10 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const data = await response.json();
       const newToken = data.access_token;
-      
       localStorage.setItem('accessToken', newToken);
       setToken(newToken);
-      
       const userData = decodeToken(newToken);
       setUser(userData);
     } catch (error) {
@@ -104,9 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  /**
-   * Email/Password Login
-   */
+  // Login
   const login = async (email: string, password: string) => {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
@@ -122,10 +104,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const data = await response.json();
       const newToken = data.access_token;
-      
       localStorage.setItem('accessToken', newToken);
       setToken(newToken);
-      
       const userData = decodeToken(newToken);
       setUser(userData);
     } catch (error) {
@@ -134,30 +114,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  /**
-   * Manual token setter (for OAuth callback)
-   */
+  // Manual token setter (OAuth callback)
   const setAuthToken = (newToken: string) => {
     localStorage.setItem('accessToken', newToken);
     setToken(newToken);
-    
     const userData = decodeToken(newToken);
     setUser(userData);
   };
 
-  /**
-   * Logout
-   */
+  // Logout
   const logout = () => {
-  localStorage.removeItem('accessToken');
-  setToken(null);
-  setUser(null);
-  // Show logged-out screen with GitHub logout link
-  window.location.href = '/logged-out';
- };
+    localStorage.removeItem('accessToken');
+    setToken(null);
+    setUser(null);
+    window.location.href = '/logged-out';
+  };
+
   const isLoggedIn = !!token;
 
-  // Loading screen
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
@@ -167,16 +141,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider 
-      value={{ 
+    <AuthContext.Provider
+      value={{
         user,
-        token, 
-        isLoggedIn, 
-        login, 
+        token,
+        isLoggedIn,
+        login,
         signup,
-        setAuthToken, 
-        logout, 
-        isLoading 
+        setAuthToken,
+        logout,
+        isLoading
       }}
     >
       {children}
