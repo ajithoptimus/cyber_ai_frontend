@@ -93,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
                 )}
                 {tool.id === 'infrastructure-analysis' && (
                   <span className="ml-auto text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">
-                    6 SCANNERS
+                    
                   </span>
                 )}
                 {tool.id === 'smart-risk-analysis' && (
@@ -103,37 +103,37 @@ const Sidebar: React.FC<SidebarProps> = ({ activeFeature, onFeatureSelect, disab
                 )}
                 {tool.id === 'ai-detection' && (
                   <span className="ml-auto text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">
-                    6A
+                    
                   </span>
                 )}
                 {tool.id === 'siem-integration' && (
                   <span className="ml-auto text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
-                    6B
+                    
                   </span>
                 )}
                 {tool.id === 'predictive-analytics' && (
                   <span className="ml-auto text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
-                    6C
+                    
                   </span>
                 )}
                 {tool.id === 'threat-intel-live' && (
                   <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full animate-pulse">
-                    6D
+                    
                   </span>
                 )}
                 {tool.id === 'ai-performance' && (
                   <span className="ml-auto text-xs bg-pink-500/20 text-pink-400 px-2 py-1 rounded-full">
-                    6E
+                    
                   </span>
                 )}
                 {tool.id === 'compliance-governance' && (
                   <span className="ml-auto text-xs bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded-full">
-                    7
+                    
                   </span>
                 )}
                 {tool.id === 'incident-response' && (
                   <span className="ml-auto text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-full">
-                    8
+                    
                   </span>
                 )}
                 {tool.id === 'ai-reports' && (
