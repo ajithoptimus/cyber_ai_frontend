@@ -1,8 +1,8 @@
-const API_URL = 'http://localhost:8000/api/admin';
-
+// src/services/adminApi.ts
 import type { User } from '../types/User';
 
-// ✅ Use only 'accessToken' everywhere
+const API_URL = 'http://localhost:8000/api/admin';
+
 function getAccessToken() {
   return localStorage.getItem('accessToken');
 }
@@ -18,7 +18,6 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
-// ... all your exports below remain UNCHANGED ...
 export async function fetchUsers(): Promise<User[]> {
   return request<User[]>(`${API_URL}/users`);
 }
@@ -39,4 +38,16 @@ export async function getUserDetails(userId: string): Promise<User> {
 }
 export async function getUserStats(): Promise<Record<string, number>> {
   return request<Record<string, number>>(`${API_URL}/users/stats`);
+}
+export async function inviteAdmin(email: string) {
+  return request<User>(`${API_URL}/invite-admin`, {
+    method: 'POST',
+    body: JSON.stringify({ email })
+  });
+}
+export async function bulkActions(action: string, ids: string[]) {
+  return request<User[]>(`${API_URL}/users/bulk`, {
+    method: 'POST',
+    body: JSON.stringify({ action, ids })
+  });
 }

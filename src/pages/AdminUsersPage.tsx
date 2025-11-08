@@ -1,8 +1,14 @@
-// src/pages/AdminUsersPage.tsx
+import React, { useEffect, useState } from 'react';
+import {
+  fetchUsers,
+  suspendUser,
+  reactivateUser,
+  makeAdmin,
+  revokeAdmin,
+  inviteAdmin,
+  bulkActions,
+} from '../services/adminApi';
 
-import React, { useState } from 'react';
-
-// User interface/type, update as needed
 interface User {
   id: string;
   email: string;
@@ -13,89 +19,55 @@ interface User {
   last_login?: string;
 }
 
-// Dummy hook for admin user management
-function useAdminUsers(): {
-  users: User[];
-  loading: boolean;
-  error?: string;
-  suspend: (userId: string) => void;
-  reactivate: (userId: string) => void;
-  makeAdmin: (userId: string) => void;
-  revokeAdmin: (userId: string) => void;
-  inviteAdmin: (email: string) => void;
-  bulkActions: (action: string, ids: string[]) => void;
-} {
-  // Replace this with your API and real logic!
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '1',
-      email: 'admin@domain.com',
-      username: 'admin1',
-      is_admin: true,
-      is_active: true,
-      created_at: '2025-10-01T10:00:00Z',
-      last_login: '2025-11-02T10:00:00Z',
-    },
-    {
-      id: '2',
-      email: 'user@domain.com',
-      username: 'user1',
-      is_admin: false,
-      is_active: false,
-      created_at: '2025-10-05T08:20:00Z',
-      last_login: '2025-11-01T14:00:00Z',
-    },
-  ]);
-  const [loading] = useState(false);
-  const [error] = useState<string | undefined>(undefined);
+function useAdminUsers() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | undefined>(undefined);
 
-  function suspend(userId: string) {
-    setUsers(users =>
-      users.map(user =>
-        user.id === userId ? { ...user, is_active: false } : user
-      )
-    );
+  async function refetch() {
+    setLoading(true);
+    setError(undefined);
+    try {
+      const data = await fetchUsers();
+      setUsers(data);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load users');
+    }
+    setLoading(false);
   }
 
-  function reactivate(userId: string) {
-    setUsers(users =>
-      users.map(user =>
-        user.id === userId ? { ...user, is_active: true } : user
-      )
-    );
-  }
+  useEffect(() => { refetch(); }, []);
 
-  function makeAdmin(userId: string) {
-    setUsers(users =>
-      users.map(user =>
-        user.id === userId ? { ...user, is_admin: true } : user
-      )
-    );
-  }
+  async function handleSuspend(id: string) { await suspendUser(id); refetch(); }
+  async function handleReactivate(id: string) { await reactivateUser(id); refetch(); }
+  async function handleMakeAdmin(id: string) { await makeAdmin(id); refetch(); }
+  async function handleRevokeAdmin(id: string) { await revokeAdmin(id); refetch(); }
+  async function handleInvite(email: string) { await inviteAdmin(email); refetch(); }
+  async function handleBulkActions(action: string, ids: string[]) { await bulkActions(action, ids); refetch(); }
 
-  function revokeAdmin(userId: string) {
-    setUsers(users =>
-      users.map(user =>
-        user.id === userId ? { ...user, is_admin: false } : user
-      )
-    );
-  }
-
-  function inviteAdmin(email: string) {
-    // Implement API call here
-    alert(`Invited admin: ${email}`);
-  }
-
-  function bulkActions(action: string, ids: string[]) {
-    // Implement bulk logic here
-    alert(`Bulk action: ${action} on users: ${ids.join(', ')}`);
-  }
-
-  return { users, loading, error, suspend, reactivate, makeAdmin, revokeAdmin, inviteAdmin, bulkActions };
+  return {
+    users, loading, error,
+    suspend: handleSuspend,
+    reactivate: handleReactivate,
+    makeAdmin: handleMakeAdmin,
+    revokeAdmin: handleRevokeAdmin,
+    inviteAdmin: handleInvite,
+    bulkActions: handleBulkActions,
+  };
 }
 
 export default function AdminUsersPage() {
-  const { users, loading, error, suspend, reactivate, makeAdmin, revokeAdmin, inviteAdmin, bulkActions } = useAdminUsers();
+  const {
+    users,
+    loading,
+    error,
+    suspend,
+    reactivate,
+    makeAdmin,
+    revokeAdmin,
+    inviteAdmin,
+    bulkActions,
+  } = useAdminUsers();
   const [search, setSearch] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [showInvite, setShowInvite] = useState(false);
@@ -235,8 +207,6 @@ export default function AdminUsersPage() {
           </tbody>
         </table>
       )}
-
-      {/* Confirmations */}
       {confirmAction && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white rounded p-6 shadow max-w-md w-full">
@@ -265,8 +235,6 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
-
-      {/* Invite Modal */}
       {showInvite && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white rounded p-6 shadow max-w-sm w-full">
